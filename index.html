@@ -53,7 +53,7 @@ export default function App() {
 
   // --- GET DATA DARI GOOGLE APPS SCRIPT SAAT AWAL DIMUAT ---
   useEffect(() => {
-    if (!IS_PREVIEW && GAS_URL !== "https://script.google.com/macros/s/AKfycbwmLUcj4X5QuYP0Ymti61g_1RKkqZCSWYvdZyFliTiI00YrMazBtf1yv11D43qEAMBoiA/exec") {
+    if (!IS_PREVIEW && GAS_URL !== "URL_DEPLOY_GAS_ANDA_DISINI") {
       setIsLoading(true);
       fetch(GAS_URL)
         .then(res => res.json())
