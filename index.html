@@ -26,7 +26,8 @@
     
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
+    <!-- Hapus atribut data-type="module" untuk mencegah error kompilasi asinkronus Babel -->
+    <script type="text/babel">
         const { useState, useEffect } = React;
 
         const Search = ({size, className}) => <i className={`fa-solid fa-magnifying-glass ${className||''}`} style={{fontSize: size}}></i>;
@@ -52,17 +53,16 @@
 
         // =====================================================================
         // KONFIGURASI FIREBASE ANDA
-        // Ganti nilai di bawah ini dengan config dari Firebase Console Anda!
         // =====================================================================
         const firebaseConfig = {
           apiKey: "AIzaSyAUpnj5e_umu4SxU_2wCCZPk5DZNPf9CXY",
-  authDomain: "makamkuden.firebaseapp.com",
-  projectId: "makamkuden",
-  storageBucket: "makamkuden.firebasestorage.app",
-  messagingSenderId: "539281636487",
-  appId: "1:539281636487:web:1599771549c69404474c22",
-  measurementId: "G-7XE81M3K3N"
-};
+          authDomain: "makamkuden.firebaseapp.com",
+          projectId: "makamkuden",
+          storageBucket: "makamkuden.firebasestorage.app",
+          messagingSenderId: "539281636487",
+          appId: "1:539281636487:web:1599771549c69404474c22",
+          measurementId: "G-7XE81M3K3N"
+        };
 
         // Inisialisasi Firebase
         if (!firebase.apps.length) {
@@ -70,25 +70,19 @@
         }
         const db = firebase.firestore();
 
-        // Data Mock (Akan dipakai jika Firebase belum dikonfigurasi)
-        const initialMakamList = ["Makam Al-Ikhlas", "Makam Kamboja", "Makam Pahlawan"];
-        const initialData = [
-          { id: '1', nama: "Alm. Ahmad Fauzi", tglWafat: "12 Mei 2023", namaMakam: "Makam Al-Ikhlas", baris: 4, nisan: 15 },
-        ];
-
         const suratYasinData = [
             { no: 1, arab: "يٰسۤ ۚ", latin: "Yaa siin.", arti: "Ya Sin." },
             { no: 2, arab: "وَالْقُرْاٰنِ الْحَكِيْمِۙ", latin: "Wal qur'aanil hakiim.", arti: "Demi Al-Qur'an yang penuh hikmah," },
             { no: 3, arab: "اِنَّكَ لَمِنَ الْمُرْسَلِيْنَۙ", latin: "Innaka laminal mursaliin.", arti: "sungguh, engkau (Muhammad) adalah salah seorang dari rasul-rasul," },
             { no: 4, arab: "عَلٰى صِرَاطٍ مُّسْتَقِيْمٍۗ", latin: "'Alaa shiraathim mustaqiim.", arti: "(yang berada) di atas jalan yang lurus," },
             { no: 5, arab: "تَنْزِيْلَ الْعَزِيْزِ الرَّحِيْمِۙ", latin: "Tanziilal 'aziizir rahiim.", arti: "(sebagai wahyu) yang diturunkan oleh (Allah) Yang Mahaperkasa, Maha Penyayang," },
-            // (Dipangkas untuk keterbacaan kode, Anda dapat menambahkan 83 ayat lengkap seperti sebelumnya di sini)
+            // ... dst ...
             { no: 83, arab: "فَسُبْحٰنَ الَّذِيْ بِيَدِهٖ مَلَكُوْتُ كُلِّ شَيْءٍ وَّاِلَيْهِ تُرْجَعُوْنَ ࣖ", latin: "Fasubhaanal-ladzii biyadihii malakuutu kulli syai'iw wa ilaihi turja'uun.", arti: "Maka Mahasuci (Allah) yang di tangan-Nya kekuasaan atas segala sesuatu dan kepada-Nyalah kamu dikembalikan." }
         ];
 
         function App() {
-          const [dataMakam, setDataMakam] = useState(initialData);
-          const [daftarMakam, setDaftarMakam] = useState(initialMakamList);
+          const [dataMakam, setDataMakam] = useState([]);
+          const [daftarMakam, setDaftarMakam] = useState([]);
           const [view, setView] = useState('public'); 
           const [searchTerm, setSearchTerm] = useState('');
           const [selectedMakam, setSelectedMakam] = useState(null);
@@ -104,7 +98,7 @@
 
           // State Form
           const [formData, setFormData] = useState({
-            nama: '', tglWafat: '', namaMakam: initialMakamList[0] || '', baris: 1, nisan: 1
+            nama: '', tglWafat: '', namaMakam: '', baris: 1, nisan: 1
           });
           const [successMsg, setSuccessMsg] = useState('');
           
@@ -124,31 +118,44 @@
             }
           }, [daftarMakam, formData.namaMakam]);
 
-          // GET DATA DARI FIREBASE
+          // GET DATA DARI FIREBASE (DENGAN TIMEOUT DAN ERROR HANDLING)
           useEffect(() => {
             const fetchFromFirebase = async () => {
-              if (firebaseConfig.apiKey === "API_KEY_FIREBASE_ANDA") {
-                console.log("Menggunakan data simulasi karena Firebase belum di-set.");
-                return; // Berhenti jika belum dikonfigurasi
-              }
+              if (firebaseConfig.apiKey === "API_KEY_FIREBASE_ANDA") return;
               
               setIsLoading(true);
+
+              // Fallback jika Firestore menggantung (hang) karena database belum di-create
+              const timeoutId = setTimeout(() => {
+                  setIsLoading(false);
+                  alert("Koneksi ke Database sangat lama! \n\nPastikan Anda sudah mengklik tombol 'Create Database' di menu Firestore Database pada akun Firebase Anda.");
+              }, 8000);
+
               try {
                 // 1. Ambil Koleksi Area Makam
                 const areaSnapshot = await db.collection("areas").get();
-                const areasList = areaSnapshot.docs.map(doc => doc.id); // Kita pakai ID dokumen sbg nama
+                const areasList = areaSnapshot.docs.map(doc => doc.id); 
                 
                 // 2. Ambil Koleksi Data Almarhum
                 const almarhumSnapshot = await db.collection("almarhum").get();
                 const almarhumList = almarhumSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+                clearTimeout(timeoutId); // Berhasil, matikan fungsi timeout
                 setDaftarMakam(areasList);
                 setDataMakam(almarhumList);
                 setIsFirebaseConfigured(true);
+                setIsLoading(false);
               } catch (error) {
+                clearTimeout(timeoutId); // Error terjadi, matikan timeout
                 console.error("Error mengambil data dari Firebase:", error);
-                setLoginError("Gagal terhubung ke Database. Periksa aturan keamanan Firebase Anda.");
-              } finally {
+                
+                let pesanError = "Gagal terhubung ke Database.\n";
+                if (error.message.includes("Missing or insufficient permissions")) {
+                    pesanError += "\nSebab: Aturan Keamanan (Rules) Anda memblokir akses. Ubah 'allow read, write: if false;' menjadi 'allow read, write: if true;'";
+                }
+                
+                alert(pesanError);
+                setLoginError(pesanError);
                 setIsLoading(false);
               }
             };
@@ -167,7 +174,6 @@
           const handleLogin = (e) => {
             e.preventDefault();
             setIsLoading(true);
-            // Simulasi Login (Untuk sistem yang sangat aman, ganti ini dengan Firebase Auth)
             setTimeout(() => {
                 if (username === 'admin' && password === 'admin2026') {
                     setView('admin'); setLoginError(''); setSelectedMakam(null); setSearchTerm(''); setShowPassword(false);
@@ -193,14 +199,13 @@
             setIsLoading(true);
             try {
               if (isFirebaseConfigured) {
-                  // Jadikan nama area sebagai ID Dokumen agar unik
                   await db.collection("areas").doc(newMakamName.trim()).set({ name: newMakamName.trim() });
               }
               setDaftarMakam([...daftarMakam, newMakamName.trim()]);
               setNewMakamName('');
               showSuccess('Area Makam baru berhasil ditambahkan!');
             } catch(err) {
-              console.error(err);
+              alert("Error: " + err.message);
             }
             setIsLoading(false);
           };
@@ -222,7 +227,7 @@
               }
               setDeleteConfirmIndex(null);
               showSuccess('Area Makam berhasil dihapus!');
-            } catch(err) { console.error(err); }
+            } catch(err) { alert("Error: " + err.message); }
             setIsLoading(false);
           };
 
@@ -234,7 +239,6 @@
 
             try {
               if (isFirebaseConfigured) {
-                  // Firebase batch update: Buat doc baru, hapus doc lama, update almarhum yang terkait
                   const batch = db.batch();
                   batch.set(db.collection("areas").doc(newName), { name: newName });
                   batch.delete(db.collection("areas").doc(oldName));
@@ -259,7 +263,7 @@
               setEditMakamIndex(null);
               setEditMakamValue('');
               showSuccess('Nama Makam berhasil diperbarui!');
-            } catch(err) { console.error(err); }
+            } catch(err) { alert("Error: " + err.message); }
             setIsLoading(false);
           };
 
@@ -284,7 +288,6 @@
             try {
               let newId = Date.now().toString();
               if (isFirebaseConfigured) {
-                  // Add ke Firestore dan dapatkan ID otomatis
                   const docRef = await db.collection("almarhum").add({
                       ...newDataPayload,
                       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -297,7 +300,7 @@
               showSuccess(`Data almarhum ${formData.nama} berhasil ditambahkan!`);
               setLoginError('');
               setFormData({ nama: '', tglWafat: '', namaMakam: daftarMakam[0] || '', baris: 1, nisan: 1 });
-            } catch(err) { console.error(err); }
+            } catch(err) { alert("Error: " + err.message); }
             setIsLoading(false);
           };
 
@@ -326,7 +329,7 @@
               setDataMakam(prev => prev.map(item => item.id === editDataId ? payloadToUpdate : item));
               setEditDataId(null);
               showSuccess('Data penghuni makam berhasil diperbarui!');
-            } catch(err) { console.error(err); }
+            } catch(err) { alert("Error: " + err.message); }
             setIsLoading(false);
           };
 
@@ -339,7 +342,7 @@
               setDataMakam(prev => prev.filter(item => item.id !== id));
               setDeleteDataConfirmId(null);
               showSuccess('Data penghuni makam berhasil dihapus!');
-            } catch(err) { console.error(err); }
+            } catch(err) { alert("Error: " + err.message); }
             setIsLoading(false);
           };
 
@@ -538,7 +541,7 @@
                     <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
                       <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
                         <h2 className="font-semibold text-stone-700">Hasil Pencarian ({filteredData.length})</h2>
-                        {!isFirebaseConfigured && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Mode Simulasi Offline</span>}
+                        {!isFirebaseConfigured && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Offline Mode</span>}
                       </div>
                       <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
                         {filteredData.length > 0 ? (
@@ -701,7 +704,7 @@
                       </div>
 
                       {loginError && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200 text-center font-medium">
+                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200 text-center font-medium whitespace-pre-line">
                           {loginError}
                         </div>
                       )}
@@ -870,8 +873,6 @@
                                 </div>
                               </div>
                             </div>
-                            
-                            {loginError && <p className="text-red-500 text-sm mt-4">{loginError}</p>}
                             
                             <div className="mt-6 flex justify-end">
                               <button type="submit" disabled={daftarMakam.length === 0} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-400 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
