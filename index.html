@@ -1,0 +1,904 @@
+import React, { useState, useEffect } from 'react';
+import { Search, MapPin, Calendar, Map as MapIcon, ArrowLeft, Lock, LogOut, Plus, CheckCircle2, ShieldAlert, Edit2, Trash2, X, Save, Compass, BookOpen, Loader2 } from 'lucide-react';
+
+// =====================================================================
+// KONFIGURASI APLIKASI
+// UBAH IS_PREVIEW KE false JIKA AKAN DI-DEPLOY KE BLOGGER
+// =====================================================================
+const IS_PREVIEW = false; // Set default true untuk Canvas
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwmLUcj4X5QuYP0Ymti61g_1RKkqZCSWYvdZyFliTiI00YrMazBtf1yv11D43qEAMBoiA/exec";
+
+// --- INITIAL MOCK DATA ---
+const initialMakamList = ["Makam Al-Ikhlas", "Makam Kamboja", "Makam Pahlawan"];
+
+const initialData = [
+  { id: 1, nama: "Alm. Ahmad Fauzi", tglWafat: "12 Mei 2023", namaMakam: "Makam Al-Ikhlas", baris: 4, nisan: 15 },
+  { id: 2, nama: "Almh. Siti Aminah", tglWafat: "05 Jan 2021", namaMakam: "Makam Al-Ikhlas", baris: 2, nisan: 5 },
+  { id: 3, nama: "Alm. Budi Santoso", tglWafat: "20 Agu 2022", namaMakam: "Makam Kamboja", baris: 1, nisan: 2 },
+  { id: 4, nama: "Alm. Joko Widodo", tglWafat: "11 Nov 2019", namaMakam: "Makam Pahlawan", baris: 18, nisan: 10 },
+  { id: 5, nama: "Almh. Rina Mulyani", tglWafat: "02 Feb 2024", namaMakam: "Makam Al-Ikhlas", baris: 20, nisan: 16 },
+  { id: 6, nama: "Alm. Hendra Pratama", tglWafat: "15 Sep 2020", namaMakam: "Makam Kamboja", baris: 5, nisan: 20 },
+];
+
+export default function App() {
+  // State Utama
+  const [dataMakam, setDataMakam] = useState(initialData);
+  const [daftarMakam, setDaftarMakam] = useState(initialMakamList);
+  const [view, setView] = useState('public'); // 'public', 'panduan', 'login', 'admin'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMakam, setSelectedMakam] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // State Loading Transaksi API
+
+  // State Auth
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // State Form Tambah Data Almarhum
+  const [formData, setFormData] = useState({
+    nama: '', tglWafat: '', namaMakam: initialMakamList[0], baris: 1, nisan: 1
+  });
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // State Form Manajemen Nama Makam
+  const [newMakamName, setNewMakamName] = useState('');
+  const [editMakamIndex, setEditMakamIndex] = useState(null);
+  const [editMakamValue, setEditMakamValue] = useState('');
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState(null);
+
+  // State Edit & Hapus Data Almarhum (Penghuni Makam)
+  const [editDataId, setEditDataId] = useState(null);
+  const [editDataForm, setEditDataForm] = useState({});
+  const [deleteDataConfirmId, setDeleteDataConfirmId] = useState(null);
+
+  // --- GET DATA DARI GOOGLE APPS SCRIPT SAAT AWAL DIMUAT ---
+  useEffect(() => {
+    if (!IS_PREVIEW && GAS_URL !== "https://script.google.com/macros/s/AKfycbwmLUcj4X5QuYP0Ymti61g_1RKkqZCSWYvdZyFliTiI00YrMazBtf1yv11D43qEAMBoiA/exec") {
+      setIsLoading(true);
+      fetch(GAS_URL)
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            setDataMakam(res.data.dataMakam);
+            setDaftarMakam(res.data.daftarMakam);
+          }
+        })
+        .catch(err => console.error("Gagal load data:", err))
+        .finally(() => setIsLoading(false));
+    }
+  }, []);
+
+  // --- HELPER UNTUK KIRIM DATA KE BACKEND ---
+  const callBackend = async (action, payload) => {
+    if (IS_PREVIEW) return { success: true, newId: Date.now() }; // Simulasi jika preview
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, payload })
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || result.message);
+      return result;
+    } catch (err) {
+      showSuccess("Terjadi kesalahan koneksi ke server!");
+      throw err;
+    }
+  };
+
+  // --- LOGIC PUBLIC ---
+  const filteredData = dataMakam.filter(makam =>
+    makam.nama.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    setSelectedMakam(null);
+  };
+
+  // --- LOGIC AUTH ---
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      if (IS_PREVIEW) {
+        if (username === 'admin' && password === 'admin2026') {
+          setView('admin'); setLoginError(''); setSelectedMakam(null); setSearchTerm('');
+          // username dan password tidak di-reset agar bisa dipakai untuk otorisasi CRUD ke GAS
+        } else {
+          setLoginError('Username atau Password salah!');
+        }
+      } else {
+        const res = await callBackend('login', { username, password });
+        if (res.success) {
+          setView('admin'); setLoginError(''); setSelectedMakam(null); setSearchTerm('');
+        }
+      }
+    } catch (err) {
+      setLoginError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setView('public');
+    setSuccessMsg('');
+    setUsername('');
+    setPassword('');
+  };
+
+  // --- LOGIC ADMIN: MANAJEMEN NAMA MAKAM ---
+  const handleAddMakamList = async (e) => {
+    e.preventDefault();
+    if (!newMakamName.trim()) return;
+    setIsLoading(true);
+    try {
+      await callBackend('addArea', { name: newMakamName.trim(), username, password });
+      setDaftarMakam([...daftarMakam, newMakamName.trim()]);
+      setNewMakamName('');
+      showSuccess('Area Makam baru berhasil ditambahkan!');
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+  const confirmDeleteMakam = (index) => {
+    setDeleteConfirmIndex(index);
+  };
+
+  const executeDeleteMakamList = async (index) => {
+    setIsLoading(true);
+    try {
+      await callBackend('deleteArea', { name: daftarMakam[index], username, password });
+      const newDaftar = daftarMakam.filter((_, i) => i !== index);
+      setDaftarMakam(newDaftar);
+      // Update form default if the deleted one was selected
+      if (formData.namaMakam === daftarMakam[index]) {
+        setFormData(prev => ({ ...prev, namaMakam: newDaftar[0] || '' }));
+      }
+      setDeleteConfirmIndex(null);
+      showSuccess('Area Makam berhasil dihapus!');
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+  const cancelDeleteMakam = () => {
+    setDeleteConfirmIndex(null);
+  };
+
+  const handleUpdateMakamList = async (index) => {
+    if (!editMakamValue.trim()) return;
+    setIsLoading(true);
+    const oldName = daftarMakam[index];
+    const newName = editMakamValue.trim();
+
+    try {
+      await callBackend('editArea', { oldName, newName, username, password });
+      // Update list makam
+      const newDaftar = [...daftarMakam];
+      newDaftar[index] = newName;
+      setDaftarMakam(newDaftar);
+
+      // Update data almarhum yang menggunakan makam ini
+      setDataMakam(prevData => prevData.map(item => 
+        item.namaMakam === oldName ? { ...item, namaMakam: newName } : item
+      ));
+
+      // Reset Form if it was using old name
+      if (formData.namaMakam === oldName) {
+        setFormData(prev => ({ ...prev, namaMakam: newName }));
+      }
+
+      setEditMakamIndex(null);
+      setEditMakamValue('');
+      showSuccess('Nama Makam berhasil diperbarui!');
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+
+  // --- LOGIC ADMIN: DATA ALMARHUM ---
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value
+    }));
+  };
+
+  const handleAddData = async (e) => {
+    e.preventDefault();
+    if (!formData.nama || !formData.tglWafat || !formData.namaMakam || !formData.baris || !formData.nisan) {
+      setLoginError('Semua kolom harus diisi!');
+      return;
+    }
+
+    setIsLoading(true);
+    const newDataPayload = { ...formData };
+    
+    try {
+      const res = await callBackend('addAlmarhum', { data: newDataPayload, username, password });
+      const newData = { id: res.newId, ...newDataPayload };
+      
+      setDataMakam(prev => [newData, ...prev]);
+      showSuccess(`Data almarhum ${formData.nama} berhasil ditambahkan!`);
+      setLoginError('');
+      // Reset form
+      setFormData({ nama: '', tglWafat: '', namaMakam: daftarMakam[0] || '', baris: 1, nisan: 1 });
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+  // --- LOGIC ADMIN: MANAJEMEN EDIT & HAPUS DATA ALMARHUM ---
+  const startEditData = (makam) => {
+    setEditDataId(makam.id);
+    setEditDataForm({ ...makam });
+    setDeleteDataConfirmId(null);
+  };
+
+  const handleEditDataChange = (e) => {
+    const { name, value } = e.target;
+    setEditDataForm(prev => ({
+      ...prev,
+      [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value
+    }));
+  };
+
+  const saveEditData = async () => {
+    if (!editDataForm.nama || !editDataForm.tglWafat || !editDataForm.namaMakam || !editDataForm.baris || !editDataForm.nisan) {
+      return; // Hindari simpan jika data kosong
+    }
+    setIsLoading(true);
+    try {
+      await callBackend('editAlmarhum', { data: editDataForm, username, password });
+      setDataMakam(prev => prev.map(item => item.id === editDataId ? editDataForm : item));
+      setEditDataId(null);
+      showSuccess('Data penghuni makam berhasil diperbarui!');
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+  const executeDeleteData = async (id) => {
+    setIsLoading(true);
+    try {
+      await callBackend('deleteAlmarhum', { id, username, password });
+      setDataMakam(prev => prev.filter(item => item.id !== id));
+      setDeleteDataConfirmId(null);
+      showSuccess('Data penghuni makam berhasil dihapus!');
+    } catch(err) {}
+    setIsLoading(false);
+  };
+
+  // Helper Notifikasi
+  const showSuccess = (msg) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-100 font-sans text-stone-800">
+      
+      {/* Overlay Loading Global */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-emerald-800 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+            <Loader2 className="animate-spin" size={24} />
+            <span className="font-semibold">Memproses ke Server...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="bg-emerald-800 text-white p-4 md:p-6 shadow-md relative z-20">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <MapIcon size={32} className="text-emerald-300" />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold">Sistem Tata Letak Makam</h1>
+              <p className="text-emerald-200 text-xs md:text-sm">Pencarian & Visualisasi Lokasi</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Navigasi Utama Publik */}
+            {(view === 'public' || view === 'panduan') && (
+              <div className="flex gap-2 mr-2 border-r border-emerald-700 pr-4">
+                <button 
+                  onClick={() => {setView('public'); setSelectedMakam(null);}} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'public' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}
+                >
+                  <Search size={16} /> Pencarian
+                </button>
+                <button 
+                  onClick={() => setView('panduan')} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'panduan' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}
+                >
+                  <BookOpen size={16} /> Panduan Ziarah
+                </button>
+              </div>
+            )}
+
+            {/* Tombol Akses / Login */}
+            {view === 'admin' ? (
+              <button onClick={handleLogout} className="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-950 px-4 py-2 rounded-lg text-sm transition-colors">
+                <LogOut size={16} /> Keluar Admin
+              </button>
+            ) : view === 'login' ? (
+               <button onClick={() => setView('public')} className="flex items-center gap-2 text-emerald-200 hover:text-white text-sm transition-colors">
+                <ArrowLeft size={16} /> Kembali
+              </button>
+            ) : (
+               <button onClick={() => setView('login')} className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm transition-colors border border-emerald-600">
+                <Lock size={16} /> Petugas
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto p-4 md:p-6">
+        
+        {/* ================= VIEW: PANDUAN ZIARAH ================= */}
+        {view === 'panduan' && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-stone-200">
+              <div className="text-center mb-8 border-b border-stone-100 pb-6">
+                <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen size={32} className="text-emerald-700" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-stone-800">Tata Cara Ziarah Kubur</h2>
+                <p className="text-stone-500 mt-2">Adab dan tuntunan saat mengunjungi makam keluarga dan kaum muslimin.</p>
+              </div>
+
+              <div className="space-y-8 max-w-3xl mx-auto">
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-1">Berwudhu Terlebih Dahulu</h3>
+                    <p className="text-stone-600 leading-relaxed">Disunnahkan dalam keadaan suci (berwudhu) sebelum memasuki area pekuburan, sebagai bentuk adab dan kesiapan untuk memanjatkan doa.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">2</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-1">Mengucapkan Salam Saat Masuk</h3>
+                    <p className="text-stone-600 leading-relaxed">Ketika memasuki gerbang pemakaman, ucapkanlah salam yang diajarkan Rasulullah SAW:</p>
+                    <div className="bg-stone-50 p-4 rounded-lg mt-2 border border-stone-100">
+                      <p className="text-stone-800 font-medium italic text-center text-lg mb-2">"Assalâmu 'alâ ahlid diyâr minal mu'minîna wal muslimîn..."</p>
+                      <p className="text-sm text-stone-500 text-center">(Keselamatan kepada penghuni kubur dari kaum mukminin dan muslimin...)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">3</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-1">Menjaga Adab: Tidak Menginjak/Menduduki Nisan</h3>
+                    <p className="text-stone-600 leading-relaxed">Berjalanlah melalui sela-sela antar makam. Dilarang keras duduk, menginjak, atau melangkah tepat di atas gundukan makam atau nisan sebagai bentuk penghormatan kepada almarhum/ah.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">4</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-1">Membaca Doa dan Ayat Suci Al-Quran</h3>
+                    <p className="text-stone-600 leading-relaxed">Posisikan diri menghadap wajah ahli kubur (atau menghadap kiblat jika berdoa). Bacakan doa memohon ampunan untuk ahli kubur. Boleh juga merangkainya dengan membaca Surah Yasin, Al-Fatihah, atau tahlil dengan suara yang tidak mengganggu pengunjung lain.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">5</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-800 mb-1">Tafakur (Mengingat Kematian)</h3>
+                    <p className="text-stone-600 leading-relaxed">Jadikan momen ziarah sebagai pengingat (ibrah) bahwa dunia ini sementara dan semua yang hidup pasti akan menyusul ke alam barzah.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg">!</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-red-700 mb-1">Hal-Hal yang Dilarang (Muharramat)</h3>
+                    <ul className="list-disc pl-5 text-stone-600 space-y-1 mt-2">
+                      <li>Meratap (Niyahah), menangis histeris, atau merobek pakaian. Menangis wajar karena sedih diperbolehkan.</li>
+                      <li>Meminta-minta doa, keselamatan, atau rezeki kepada kuburan/orang yang telah meninggal (Tindakan Syirik). Doa hanya ditujukan kepada Allah SWT.</li>
+                      <li>Mencium atau mengusap-usap batu nisan mencari keberkahan.</li>
+                      <li>Membuang sampah sembarangan di area pemakaman.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= SECTION BACAAN DOA ================= */}
+              <div className="mt-12 pt-8 border-t border-stone-200 max-w-3xl mx-auto">
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold text-emerald-900 mb-2 flex items-center justify-center gap-3">
+                    <BookOpen className="text-emerald-600" size={24} /> Kumpulan Doa Ziarah Kubur
+                  </h3>
+                  <p className="text-stone-500 text-sm">Bacaan doa yang dianjurkan sesuai sunnah</p>
+                </div>
+                
+                <div className="space-y-6">
+                  {/* Doa 1: Salam Masuk Makam */}
+                  <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
+                    <h4 className="font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4">1. Doa Salam (Saat Memasuki Area Makam)</h4>
+                    <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">
+                      السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ، وَإِنَّا إِنْ شَاءَ اللهُ بِكُمْ لَلَاحِقُونَ، أَسْأَلُ اللهَ لَنَا وَلَكُمُ الْعَافِيَةَ
+                    </p>
+                    <div className="bg-white p-4 rounded-lg border border-emerald-100/50 space-y-2">
+                      <p className="text-emerald-900 font-medium italic text-sm md:text-base leading-relaxed">
+                        "Assalaamu 'alaikum ahlad-diyaar minal mu'miniina wal muslimiin, wa innaa in syaa-allaahu bikum lalaahiquun, as'alullaaha lanaa wa lakumul 'aafiyah."
+                      </p>
+                      <p className="text-stone-600 text-sm md:text-base leading-relaxed">
+                        <span className="font-semibold">Artinya:</span> "Semoga keselamatan tercurah kepada kalian, wahai penghuni kubur, dari (golongan) orang-orang beriman dan orang-orang Islam. Kami insya Allah akan menyusul kalian. Aku meminta keselamatan untuk kami dan kalian." (HR. Muslim)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Doa 2: Doa Ampunan */}
+                  <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
+                    <div className="border-b border-emerald-200 pb-2 mb-4">
+                      <h4 className="font-bold text-emerald-800">2. Doa Memohon Ampunan untuk Almarhum/ah</h4>
+                      <p className="text-xs text-emerald-600 mt-1">*Catatan: Ganti kata "-hu" (لَهُ) menjadi "-ha" (لَهَا) jika almarhum adalah perempuan.</p>
+                    </div>
+                    <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">
+                      اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ، وَنَقِّهِ مِنَ الْخَطَايَا كَمَا يُنَقَّى الثَّوْبُ الْأَبْيَضُ مِنَ الدَّنَسِ
+                    </p>
+                    <div className="bg-white p-4 rounded-lg border border-emerald-100/50 space-y-2">
+                      <p className="text-emerald-900 font-medium italic text-sm md:text-base leading-relaxed">
+                        "Allahummaghfirlahu warhamhu wa'aafihi wa'fu 'anhu, wa akrim nuzulahu, wa wassi' mudkhalahu, waghsilhu bil-ma'i wats-tsalji wal-barad, wa naqqihi minal-khathaayaa kamaa yunaqqats-tsaubul-abyadhu minad-danas."
+                      </p>
+                      <p className="text-stone-600 text-sm md:text-base leading-relaxed">
+                        <span className="font-semibold">Artinya:</span> "Ya Allah, ampunilah dia, berilah rahmat kepadanya, selamatkanlah dia, dan maafkanlah dia. Muliakanlah tempat singgahnya, luaskanlah kuburnya, dan mandikanlah ia dengan air, salju, dan es. Bersihkan dia dari segala kesalahan, sebagaimana Engkau membersihkan baju yang putih dari kotoran." (HR. Muslim)
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ================= VIEW: PUBLIC (PENCARIAN) ================= */}
+        {view === 'public' && !selectedMakam && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Masukkan nama almarhum/almarhumah... (Coba ketik 'Ahmad')"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+              <div className="p-4 bg-stone-50 border-b border-stone-200">
+                <h2 className="font-semibold text-stone-700">Hasil Pencarian ({filteredData.length})</h2>
+              </div>
+              <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
+                {filteredData.length > 0 ? (
+                  filteredData.map((makam) => (
+                    <div 
+                      key={makam.id} 
+                      onClick={() => setSelectedMakam(makam)}
+                      className="p-4 hover:bg-emerald-50 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div>
+                        <h3 className="font-bold text-lg text-emerald-900">{makam.nama}</h3>
+                        <div className="flex items-center gap-4 text-sm text-stone-500 mt-1">
+                          <span className="flex items-center gap-1"><Calendar size={14}/> Wafat: {makam.tglWafat}</span>
+                        </div>
+                      </div>
+                      <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0">
+                        <MapPin size={16} />
+                        {makam.namaMakam} / Baris {makam.baris} / No. {makam.nisan}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-stone-500">
+                    Tidak ditemukan makam dengan nama tersebut.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= VIEW: PUBLIC (PETA DENAH) ================= */}
+        {view === 'public' && selectedMakam && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button 
+              onClick={() => setSelectedMakam(null)}
+              className="flex items-center gap-2 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 px-4 py-2 rounded-lg w-fit transition-colors"
+            >
+              <ArrowLeft size={18} /> Kembali ke Pencarian
+            </button>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-emerald-900 mb-2">{selectedMakam.nama}</h2>
+                <div className="flex flex-col gap-2 text-stone-600">
+                  <span className="flex items-center gap-2"><Calendar size={18}/> Tanggal Wafat: {selectedMakam.tglWafat}</span>
+                </div>
+              </div>
+              <div className="text-right bg-stone-50 p-4 rounded-lg border border-stone-200 w-full md:w-auto">
+                <div className="text-sm text-stone-500 mb-1">Lokasi Detail</div>
+                <div className="text-xl font-bold text-emerald-800">
+                  {selectedMakam.namaMakam}
+                </div>
+                <div className="font-semibold text-stone-700">
+                  Baris {selectedMakam.baris}, Nisan No. {selectedMakam.nisan}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+              <div className="p-4 bg-emerald-800 text-white border-b border-emerald-900 flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2">
+                  <MapIcon size={18} /> Denah Area: {selectedMakam.namaMakam}
+                </h3>
+                <span className="text-xs bg-emerald-700 px-2 py-1 rounded">Visualisasi Skematik</span>
+              </div>
+              
+              <div className="p-4 md:p-8 bg-[#e8f3e8] overflow-x-auto relative max-h-[70vh] overflow-y-auto">
+                
+                {/* Petunjuk Arah Mata Angin (Kompas "U") */}
+                <div className="sticky left-2 top-2 z-30 pointer-events-none mb-[-80px] w-fit">
+                   <div className="bg-white/95 backdrop-blur-sm w-20 h-20 rounded-full shadow-md border-2 border-emerald-200 pointer-events-auto flex items-center justify-center relative transform hover:scale-105 transition-transform">
+                      {/* Jarum Utara (Merah) & Huruf U */}
+                      <div className="absolute top-1.5 flex flex-col items-center">
+                         <span className="text-red-600 font-black text-sm drop-shadow-sm leading-none z-10">U</span>
+                         <svg width="14" height="24" viewBox="0 0 14 24" className="mt-0.5">
+                            <polygon points="7,0 14,24 7,18 0,24" fill="#dc2626" />
+                         </svg>
+                      </div>
+                      
+                      {/* Jarum Selatan (Abu-abu) */}
+                      <div className="absolute bottom-1.5 flex flex-col items-center rotate-180">
+                         <svg width="10" height="18" viewBox="0 0 14 24" className="mb-0.5 opacity-40">
+                            <polygon points="7,0 14,24 7,18 0,24" fill="#44403c" />
+                         </svg>
+                      </div>
+                      
+                      {/* Garis silang tipis horisontal/vertikal */}
+                      <div className="absolute w-full h-[1px] bg-emerald-100"></div>
+                      <div className="absolute w-[1px] h-full bg-emerald-100"></div>
+                      
+                      {/* Titik Tengah Kompas */}
+                      <div className="w-3 h-3 bg-emerald-800 rounded-full border-2 border-white z-10 shadow-sm relative"></div>
+                      
+                      {/* Arah Lainnya (S, T, B) */}
+                      <span className="absolute bottom-2 text-[10px] font-bold text-stone-400 z-10">S</span>
+                      <span className="absolute right-2 text-[10px] font-bold text-stone-400 z-10">T</span>
+                      <span className="absolute left-2 text-[10px] font-bold text-stone-400 z-10">B</span>
+                   </div>
+                </div>
+
+                <div className="w-fit min-w-full pt-40 pb-10 flex flex-col items-center gap-6 px-4 md:px-8 mx-auto">
+                  {/* GENERATOR GRID DINAMIS BERDASARKAN DATA */}
+                  {(() => {
+                    const dataSatuArea = dataMakam.filter(m => m.namaMakam === selectedMakam.namaMakam);
+                    const dinamisMaxBaris = Math.max(5, ...dataSatuArea.map(m => m.baris));
+                    const dinamisMaxNisan = Math.max(10, ...dataSatuArea.map(m => m.nisan));
+
+                    return Array.from({ length: dinamisMaxBaris }, (_, i) => i + 1).map((baris) => (
+                      <div key={baris} className="flex items-center gap-4 w-full">
+                        <div className="w-20 text-right font-bold text-emerald-800 shrink-0">
+                          Baris {baris}
+                        </div>
+                        <div className="flex gap-2 flex-1 border-b-4 border-[#c1dec1] pb-2 pr-4">
+                          {Array.from({ length: dinamisMaxNisan }, (_, i) => i + 1).map((nisan) => {
+                            const isSelected = selectedMakam.baris === baris && selectedMakam.nisan === nisan;
+                            return (
+                              <div 
+                                key={nisan} 
+                                className={`
+                                  relative w-12 h-16 rounded-t-lg flex items-end justify-center pb-2 text-xs font-bold border-2 transition-all
+                                  ${isSelected 
+                                    ? 'bg-slate-800 border-slate-900 text-white shadow-lg z-10 scale-110' 
+                                    : 'bg-emerald-100 border-emerald-300 text-emerald-600 opacity-60'}
+                                `}
+                              >
+                                {nisan}
+                                {isSelected && (
+                                  <div className="absolute bottom-full mb-4 left-1/2 transform -translate-x-1/2 w-64 bg-yellow-400 border-4 border-yellow-500 rounded-xl shadow-xl p-4 text-center cursor-default z-50 animate-bounce">
+                                    <div className="text-xs font-bold uppercase text-yellow-900 mb-1 tracking-wider">
+                                      Makam Saudara
+                                    </div>
+                                    <div className="text-lg font-extrabold text-black leading-tight mb-2">
+                                      {selectedMakam.nama}
+                                    </div>
+                                    <div className="bg-yellow-300/50 rounded py-1 mb-2 text-sm text-yellow-900 border border-yellow-500/30">
+                                      Wafat: {selectedMakam.tglWafat}
+                                    </div>
+                                    <div className="text-black font-bold flex flex-col items-center gap-1">
+                                      <span className="text-sm">Lokasi:</span>
+                                      <span className="bg-black text-yellow-400 px-3 py-1 rounded-xl text-sm leading-tight text-center">
+                                        {selectedMakam.namaMakam}<br/>Baris {selectedMakam.baris}, No. {selectedMakam.nisan}
+                                      </span>
+                                    </div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[16px] border-t-yellow-500"></div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 mt-[-4px] border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-yellow-400"></div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= VIEW: LOGIN ================= */}
+        {view === 'login' && (
+          <div className="max-w-md mx-auto mt-10">
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-200 animate-in zoom-in-95 duration-300">
+              <div className="text-center mb-8">
+                <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShieldAlert size={32} className="text-emerald-700" />
+                </div>
+                <h2 className="text-2xl font-bold text-stone-800">Login Admin</h2>
+                <p className="text-stone-500 text-sm mt-2">Gunakan kredensial petugas untuk mengelola data</p>
+              </div>
+
+              {loginError && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200 text-center font-medium">
+                  {loginError}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Username</label>
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none" placeholder="Masukkan username" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Password</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none" placeholder="Masukkan password" required />
+                </div>
+                <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition-colors mt-4">
+                  Masuk Sistem
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ================= VIEW: ADMIN DASHBOARD ================= */}
+        {view === 'admin' && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            
+            {successMsg && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
+                <CheckCircle2 className="text-emerald-500 shrink-0" />
+                <span className="font-medium">{successMsg}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Kolom Kiri: Manajemen Daftar Nama Makam */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                  <div className="p-4 bg-stone-800 text-white flex items-center gap-2">
+                    <MapPin size={20} />
+                    <h2 className="font-semibold">Manajemen Area Makam</h2>
+                  </div>
+                  <div className="p-4">
+                    <form onSubmit={handleAddMakamList} className="flex gap-2 mb-4">
+                      <input 
+                        type="text" value={newMakamName} onChange={e => setNewMakamName(e.target.value)} 
+                        placeholder="Tambah Makam Baru..." 
+                        className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" 
+                      />
+                      <button type="submit" className="bg-stone-800 hover:bg-black text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Tambah
+                      </button>
+                    </form>
+
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                      {daftarMakam.length === 0 && <p className="text-sm text-stone-500 text-center py-4">Belum ada area makam.</p>}
+                      {daftarMakam.map((makam, index) => (
+                        <div key={index} className="bg-stone-50 border border-stone-200 p-3 rounded-lg flex flex-col gap-2">
+                          {editMakamIndex === index ? (
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="text" value={editMakamValue} onChange={e => setEditMakamValue(e.target.value)} 
+                                className="flex-1 px-2 py-1.5 border border-emerald-500 rounded text-sm outline-none" autoFocus
+                              />
+                              <button onClick={() => handleUpdateMakamList(index)} className="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200" title="Simpan">
+                                <Save size={16} />
+                              </button>
+                              <button onClick={() => setEditMakamIndex(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded hover:bg-stone-300" title="Batal">
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-stone-700 text-sm">{makam}</span>
+                              <div className="flex gap-1">
+                                {deleteConfirmIndex === index ? (
+                                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-2 py-1 rounded">
+                                    <span className="text-xs text-red-800 font-bold">Hapus?</span>
+                                    <button onClick={() => executeDeleteMakamList(index)} className="p-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-bold px-3 transition-colors">Ya</button>
+                                    <button onClick={cancelDeleteMakam} className="p-1 bg-stone-200 text-stone-700 rounded hover:bg-stone-300 text-xs font-bold px-2 transition-colors">Batal</button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button 
+                                      onClick={() => { setEditMakamIndex(index); setEditMakamValue(makam); }} 
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit"
+                                    >
+                                      <Edit2 size={16} />
+                                    </button>
+                                    <button 
+                                      onClick={() => confirmDeleteMakam(index)} 
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Tambah Data Almarhum & Tabel */}
+              <div className="lg:col-span-2 space-y-6">
+                
+                {/* Form Tambah Data Almarhum */}
+                <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                  <div className="p-4 bg-emerald-800 border-b border-emerald-900 text-white flex items-center gap-2">
+                    <Plus size={20} />
+                    <h2 className="font-semibold text-lg">Tambah Data Almarhum/ah</h2>
+                  </div>
+                  
+                  <form onSubmit={handleAddData} className="p-4 md:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-stone-700">Nama Lengkap</label>
+                        <input type="text" name="nama" value={formData.nama} onChange={handleFormChange} required placeholder="Contoh: Alm. Budi Suryadi" className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-stone-700">Tanggal Wafat</label>
+                        <input type="text" name="tglWafat" value={formData.tglWafat} onChange={handleFormChange} required placeholder="Contoh: 15 Okt 2023" className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-stone-700">Pilih Area Makam</label>
+                        <select name="namaMakam" value={formData.namaMakam} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                          {daftarMakam.length === 0 ? (
+                            <option value="">-- Tambah Area Makam Dulu --</option>
+                          ) : (
+                            daftarMakam.map((makam, i) => (
+                              <option key={i} value={makam}>{makam}</option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="block text-sm font-medium text-stone-700">Baris</label>
+                          <input type="number" min="1" name="baris" value={formData.baris} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-sm font-medium text-stone-700">No Nisan</label>
+                          <input type="number" min="1" name="nisan" value={formData.nisan} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {loginError && <p className="text-red-500 text-sm mt-4">{loginError}</p>}
+                    
+                    <div className="mt-6 flex justify-end">
+                      <button type="submit" disabled={daftarMakam.length === 0} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-400 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                        <Plus size={18} /> Simpan Data Almarhum
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Tabel Data Saat Ini */}
+                <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                  <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
+                    <h2 className="font-semibold text-stone-800">Database Penghuni Makam ({dataMakam.length} Data)</h2>
+                  </div>
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-stone-100 shadow-sm z-10">
+                        <tr className="text-stone-600 text-sm border-b border-stone-200">
+                          <th className="p-3 font-semibold w-12">No</th>
+                          <th className="p-3 font-semibold">Nama Almarhum/ah</th>
+                          <th className="p-3 font-semibold">Tanggal Wafat</th>
+                          <th className="p-3 font-semibold">Lokasi (Area/Baris/Nisan)</th>
+                          <th className="p-3 font-semibold text-center w-28">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100 text-sm">
+                        {dataMakam.map((makam, index) => (
+                          editDataId === makam.id ? (
+                            <tr key={makam.id} className="bg-emerald-50/70">
+                              <td className="p-3 text-stone-500 text-center">{index + 1}</td>
+                              <td className="p-3">
+                                <input type="text" name="nama" value={editDataForm.nama} onChange={handleEditDataChange} className="w-full px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Nama" />
+                              </td>
+                              <td className="p-3">
+                                <input type="text" name="tglWafat" value={editDataForm.tglWafat} onChange={handleEditDataChange} className="w-full px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Tgl Wafat" />
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-col xl:flex-row gap-1">
+                                  <select name="namaMakam" value={editDataForm.namaMakam} onChange={handleEditDataChange} className="px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white min-w-[100px]">
+                                    {daftarMakam.map((m, i) => <option key={i} value={m}>{m}</option>)}
+                                  </select>
+                                  <div className="flex gap-1">
+                                    <input type="number" name="baris" min="1" value={editDataForm.baris} onChange={handleEditDataChange} className="w-14 px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" title="Baris" placeholder="Brs"/>
+                                    <input type="number" name="nisan" min="1" value={editDataForm.nisan} onChange={handleEditDataChange} className="w-14 px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" title="No Nisan" placeholder="Nis"/>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <button onClick={saveEditData} className="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors shadow-sm" title="Simpan Perubahan"><Save size={16} /></button>
+                                  <button onClick={() => setEditDataId(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded hover:bg-stone-300 transition-colors shadow-sm" title="Batal Edit"><X size={16} /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            <tr key={makam.id} className="hover:bg-stone-50 transition-colors">
+                              <td className="p-3 text-stone-500 text-center">{index + 1}</td>
+                              <td className="p-3 font-medium text-stone-800">{makam.nama}</td>
+                              <td className="p-3 text-stone-600">{makam.tglWafat}</td>
+                              <td className="p-3">
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md font-medium text-xs">
+                                  <MapPin size={12}/> {makam.namaMakam} - B{makam.baris} - N{makam.nisan}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center">
+                                {deleteDataConfirmId === makam.id ? (
+                                  <div className="flex items-center justify-center gap-1 bg-red-50 border border-red-200 p-1 rounded">
+                                    <span className="text-[10px] text-red-800 font-bold hidden sm:inline">Hapus?</span>
+                                    <button onClick={() => executeDeleteData(makam.id)} className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-bold transition-colors shadow-sm">Ya</button>
+                                    <button onClick={() => setDeleteDataConfirmId(null)} className="px-2 py-1 bg-stone-200 text-stone-700 rounded hover:bg-stone-300 text-xs font-bold transition-colors shadow-sm">X</button>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-center gap-1">
+                                    <button onClick={() => startEditData(makam)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit Data Almarhum"><Edit2 size={16} /></button>
+                                    <button onClick={() => setDeleteDataConfirmId(makam.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus Data Almarhum"><Trash2 size={16} /></button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+  );
+}
