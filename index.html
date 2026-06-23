@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tata Letak Makam Kuden</title>
+    <title>Sistem Tata Letak Makam</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -92,7 +92,7 @@
             { no: 28, arab: "۞ وَمَآ اَنْزَلْنَا عَلٰى قَوْمِهٖ مِنْۢ بَعْدِهٖ مِنْ جُنْدٍ مِّنَ السَّمَاۤءِ وَمَا كُنَّا مُنْزِلِيْنَ", latin: "Wa mā anzalnā ‘alā qaumihī mim ba‘dihī min jundim minas-samā'i wa mā kunnā munzilīn(a).", arti: "Dan Kami tidak menurunkan kepada kaumnya sesudah dia (meninggal) suatu pasukan pun dari langit dan Kami tidak pantas menurunkannya." },
             { no: 29, arab: "اِنْ كَانَتْ اِلَّا صَيْحَةً وَّاحِدَةً فَاِذَا هُمْ خَامِدُوْنَ", latin: "In kānat illā ṣaiḥataw wāḥidatan fa iżā hum khāmidūn(a).", arti: "Tidak ada siksaan terhadap mereka melainkan satu teriakan saja; maka tiba-tiba mereka semuanya mati." },
             { no: 30, arab: "يٰحَسْرَةً عَلَى الْعِبَادِۚ مَا يَأْتِيْهِمْ مِّنْ رَّسُوْلٍ اِلَّا كَانُوْا بِهٖ يَسْتَهْزِءُوْنَ", latin: "Yā ḥasratan ‘alal-‘ibād(i), mā ya'tīhim mir rasūlin illā kānū bihī yastahzi'ūn(a).", arti: "Alangkah besarnya penyesalan terhadap hamba-hamba itu, setiap datang seorang rasul kepada mereka, mereka selalu memperolok-olokkannya." },
-            { no: 31, arab: "اَلَمْ يَرَوْا كَمْ اَهْلَكْنَا قَبْلَهُمْ مِّنَ الْقُرُوْنِ اَنَّهُمْ اِلَيْهِمْ لَا يَرْجِعُوْنَ", latin: "Alam yarau kam ahlaknā qablahum minal-qurūni annahum ilaihim lā yarji‘ūn(a).", arti: "Tidakkah mereka mengetahui berapa banyak umat-umat sebelum mereka yang telah Kami binasakan. Orang-orang (yang telah Kami binasakan) itu tidak ada yang kembali kepada mereka." },
+            { no: 31, arab: "اَلَمْ يَرَوْا كَمْ اَهْلَكْنَا قَبْلَهُمْ مِّنْ الْقُرُوْنِ اَنَّهُمْ اِلَيْهِمْ لَا يَرْجِعُوْنَ", latin: "Alam yarau kam ahlaknā qablahum minal-qurūni annahum ilaihim lā yarji‘ūn(a).", arti: "Tidakkah mereka mengetahui berapa banyak umat-umat sebelum mereka yang telah Kami binasakan. Orang-orang (yang telah Kami binasakan) itu tidak ada yang kembali kepada mereka." },
             { no: 32, arab: "وَاِنْ كُلٌّ لَّمَّا جَمِيْعٌ لَّدَيْنَا مُحْضَرُوْنَ", latin: "Wa in kullul lammā jamī‘ul ladainā muḥḍarūn(a).", arti: "Dan setiap mereka semuanya akan dikumpulkan lagi kepada Kami." },
             { no: 33, arab: "وَاٰيَةٌ لَّهُمُ الْاَرْضُ الْمَيْتَةُ ۖاَحْيَيْنٰهَا وَاَخْرَجْنَا مِنْهَا حَبًّا فَمِنْهُ يَأْكُلُوْنَ", latin: "Wa āyatul lahumul-arḍul-maitah(tu), aḥyaināhā wa akhrajnā minhā ḥabban faminhu ya'kulūn(a).", arti: "Dan suatu tanda (kekuasaan Allah) bagi mereka adalah bumi yang mati (tandus); Kami hidupkan bumi itu dan Kami keluarkan daripadanya biji-bijian, maka daripadanya mereka makan." },
             { no: 34, arab: "وَجَعَلْنَا فِيْهَا جَنّٰتٍ مِّنْ نَّخِيْلٍ وَّاَعْنَابٍ وَّفَجَّرْنَا فِيْهَا مِنَ الْعُيُوْنِۙ", latin: "Wa ja‘alnā fīhā jannātim min nakhīliw wa a‘nābiw wa fajjarnā fīhā minal-‘uyūn(i).", arti: "Dan Kami jadikan padanya di bumi itu kebun-kebun kurma dan anggur dan Kami pancarkan padanya beberapa mata air," },
@@ -337,6 +337,12 @@
             setIsLoading(false);
           };
 
+          const startEditData = (makam) => {
+            setEditDataId(makam.id);
+            setEditDataForm({ ...makam });
+            setDeleteDataConfirmId(null);
+          };
+
           const handleEditDataChange = (e) => {
             const { name, value } = e.target;
             setEditDataForm(prev => ({ ...prev, [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value }));
@@ -382,7 +388,7 @@
                   <div className="flex items-center gap-3">
                     <MapIcon size={32} className="text-emerald-300" />
                     <div>
-                      <h1 className="text-xl md:text-2xl font-bold">Tata Letak Makam Kuden</h1>
+                      <h1 className="text-xl md:text-2xl font-bold">Sistem Tata Letak Makam</h1>
                       <p className="text-emerald-200 text-xs md:text-sm">Pencarian & Visualisasi Lokasi</p>
                     </div>
                   </div>
@@ -450,11 +456,22 @@
                         <div className="space-y-6">
                           <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
                             <h4 className="font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4">1. Doa Salam (Masuk Area Makam)</h4>
-                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ...</p>
+                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ، وَإِنَّا إِنْ شَاءَ اللهُ بِكُمْ لَلَاحِقُونَ، أَسْأَلُ اللهَ لَنَا وَلَكُمُ الْعَافِيَةَ</p>
+                            <div className="bg-white p-4 rounded-lg border border-emerald-100/50 space-y-2">
+                              <p className="text-emerald-900 font-medium italic text-sm md:text-base leading-relaxed">"Assalaamu 'alaikum ahlad-diyaar minal mu'miniina wal muslimiin, wa innaa in syaa-allaahu bikum lalaahiquun, as'alullaaha lanaa wa lakumul 'aafiyah."</p>
+                              <p className="text-stone-600 text-sm md:text-base leading-relaxed"><span className="font-semibold">Artinya:</span> "Semoga keselamatan tercurah kepada kalian, wahai penghuni kubur, dari (golongan) orang-orang beriman dan orang-orang Islam. Kami insya Allah akan menyusul kalian. Aku meminta keselamatan untuk kami dan kalian." (HR. Muslim)</p>
+                            </div>
                           </div>
                           <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
-                            <div className="border-b border-emerald-200 pb-2 mb-4"><h4 className="font-bold text-emerald-800">2. Doa Memohon Ampunan</h4></div>
-                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ...</p>
+                            <div className="border-b border-emerald-200 pb-2 mb-4">
+                              <h4 className="font-bold text-emerald-800">2. Doa Memohon Ampunan (Bisa dibaca setelah tahlil/yasin)</h4>
+                              <p className="text-xs text-emerald-600 mt-1">*Catatan: Ganti kata "-hu" (لَهُ) menjadi "-ha" (لَهَا) jika almarhum adalah perempuan.</p>
+                            </div>
+                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ، وَنَقِّهِ مِنَ الْخَطَايَا كَمَا يُنَقَّى الثَّوْبُ الْأَبْيَضُ مِنَ الدَّنَسِ، وَأَبْدِلْهُ دَارًا خَيْرًا مِنْ دَارِهِ، وَأَهْلًا خَيْرًا مِنْ أَهْلِهِ، وَزَوْجًا خَيْرًا مِنْ زَوْجِهِ، وَأَدْخِلْهُ الْجَنَّةَ، وَأَعِذْهُ مِنْ عَذَابِ الْقَبْرِ، وَمِنْ عَذَابِ النَّارِ</p>
+                            <div className="bg-white p-4 rounded-lg border border-emerald-100/50 space-y-2">
+                              <p className="text-emerald-900 font-medium italic text-sm md:text-base leading-relaxed">"Allahummaghfirlahu warhamhu wa'aafihi wa'fu 'anhu, wa akrim nuzulahu, wa wassi' mudkhalahu, waghsilhu bil-ma'i wats-tsalji wal-barad, wa naqqihi minal-khathaayaa kamaa yunaqqats-tsaubul-abyadhu minad-danas, wa abdilhu daaran khairan min daarihi, wa ahlan khairan min ahlihi, wa zaujan khairan min zaujihi, wa adkhilhul-jannata, wa a'idzhu min 'adzaabil-qabri, wa min 'adzaabin-naar."</p>
+                              <p className="text-stone-600 text-sm md:text-base leading-relaxed"><span className="font-semibold">Artinya:</span> "Ya Allah, ampunilah dia, berilah rahmat kepadanya, selamatkanlah dia, dan maafkanlah dia. Muliakanlah tempat singgahnya, luaskanlah kuburnya, dan mandikanlah ia dengan air, salju, dan es. Bersihkan dia dari segala kesalahan, sebagaimana Engkau membersihkan baju yang putih dari kotoran. Gantikanlah rumahnya dengan rumah yang lebih baik dari rumahnya (di dunia), keluarganya dengan keluarga yang lebih baik dari keluarganya, dan pasangannya dengan pasangan yang lebih baik dari pasangannya. Masukkanlah dia ke dalam surga, dan lindungilah dia dari azab kubur serta azab neraka." (HR. Muslim)</p>
+                            </div>
                           </div>
                         </div>
                       </div>
