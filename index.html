@@ -3,30 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Tata Letak Makam (Firebase)</title>
+    <title>Sistem Tata Letak Makam</title>
     
-    <!-- 1. Load Tailwind CSS untuk Desain -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Load FontAwesome untuk Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- 3. Load Mesin React via CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- 4. Load Babel untuk Menerjemahkan Kode JSX -->
     <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
 
-    <!-- 5. FIREBASE SDK (Versi Compat agar mudah digunakan via CDN di Blogger) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
 <body class="bg-stone-100">
     
     <div id="root"></div>
 
-    <!-- Hapus atribut data-type="module" untuk mencegah error kompilasi asinkronus Babel -->
     <script type="text/babel">
         const { useState, useEffect } = React;
 
@@ -51,33 +46,105 @@
         const ChevronDown = ({size, className}) => <i className={`fa-solid fa-chevron-down ${className||''}`} style={{fontSize: size}}></i>;
         const ChevronUp = ({size, className}) => <i className={`fa-solid fa-chevron-up ${className||''}`} style={{fontSize: size}}></i>;
 
-        // =====================================================================
-        // KONFIGURASI FIREBASE ANDA
-        // =====================================================================
         const firebaseConfig = {
-          apiKey: "AIzaSyAUpnj5e_umu4SxU_2wCCZPk5DZNPf9CXY",
-          authDomain: "makamkuden.firebaseapp.com",
-          projectId: "makamkuden",
-          storageBucket: "makamkuden.firebasestorage.app",
-          messagingSenderId: "539281636487",
-          appId: "1:539281636487:web:1599771549c69404474c22",
-          measurementId: "G-7XE81M3K3N"
+            apiKey: "AIzaSyAUpnj5e_umu4SxU_2wCCZPk5DZNPf9CXY",
+            authDomain: "makamkuden.firebaseapp.com",
+            projectId: "makamkuden",
+            storageBucket: "makamkuden.firebasestorage.app",
+            messagingSenderId: "539281636487",
+            appId: "1:539281636487:web:1599771549c69404474c22",
+            measurementId: "G-7XE81M3K3N"
         };
 
-        // Inisialisasi Firebase
         if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
 
         const suratYasinData = [
-            { no: 1, arab: "يٰسۤ ۚ", latin: "Yaa siin.", arti: "Ya Sin." },
-            { no: 2, arab: "وَالْقُرْاٰنِ الْحَكِيْمِۙ", latin: "Wal qur'aanil hakiim.", arti: "Demi Al-Qur'an yang penuh hikmah," },
-            { no: 3, arab: "اِنَّكَ لَمِنَ الْمُرْسَلِيْنَۙ", latin: "Innaka laminal mursaliin.", arti: "sungguh, engkau (Muhammad) adalah salah seorang dari rasul-rasul," },
-            { no: 4, arab: "عَلٰى صِرَاطٍ مُّسْتَقِيْمٍۗ", latin: "'Alaa shiraathim mustaqiim.", arti: "(yang berada) di atas jalan yang lurus," },
-            { no: 5, arab: "تَنْزِيْلَ الْعَزِيْزِ الرَّحِيْمِۙ", latin: "Tanziilal 'aziizir rahiim.", arti: "(sebagai wahyu) yang diturunkan oleh (Allah) Yang Mahaperkasa, Maha Penyayang," },
-            // ... dst ...
-            { no: 83, arab: "فَسُبْحٰنَ الَّذِيْ بِيَدِهٖ مَلَكُوْتُ كُلِّ شَيْءٍ وَّاِلَيْهِ تُرْجَعُوْنَ ࣖ", latin: "Fasubhaanal-ladzii biyadihii malakuutu kulli syai'iw wa ilaihi turja'uun.", arti: "Maka Mahasuci (Allah) yang di tangan-Nya kekuasaan atas segala sesuatu dan kepada-Nyalah kamu dikembalikan." }
+            { no: 1, arab: "يٰسۤ ۚ", latin: "Yā sīn.", arti: "Ya Sin." },
+            { no: 2, arab: "وَالْقُرْاٰنِ الْحَكِيْمِۙ", latin: "Wal-qur'ānil-ḥakīm(i).", arti: "Demi Al-Qur'an yang penuh hikmah," },
+            { no: 3, arab: "اِنَّكَ لَمِنَ الْمُرْسَلِيْنَۙ", latin: "Innaka laminal-mursalīn(a).", arti: "Sungguh, engkau (Muhammad) adalah salah seorang rasul," },
+            { no: 4, arab: "عَلٰى صِرَاطٍ مُّسْتَقِيْمٍۗ", latin: "‘Alā ṣirāṭim mustaqīm(in).", arti: "(yang berada) di atas jalan yang lurus," },
+            { no: 5, arab: "تَنْزِيْلَ الْعَزِيْزِ الرَّحِيْمِۙ", latin: "Tanzīlal-‘azīzir-raḥīm(i).", arti: "(Sebagai wahyu) yang diturunkan oleh (Allah) Yang Mahaperkasa lagi Maha Penyayang," },
+            { no: 6, arab: "لِتُنْذِرَ قَوْمًا مَّآ اُنْذِرَ اٰبَاۤؤُهُمْ فَهُمْ غٰفِلُوْنَ", latin: "Litunżira qaumam mā unżira ābā'uhum fahum gāfilūn(a).", arti: "Agar engkau memberi peringatan kepada suatu kaum yang nenek moyangnya belum pernah diberi peringatan, karena itu mereka lalai." },
+            { no: 7, arab: "لَقَدْ حَقَّ الْقَوْلُ عَلٰٓى اَكْثَرِهِمْ فَهُمْ لَا يُؤْمِنُوْنَ", latin: "Laqad ḥaqqal-qaulu ‘alā akṡarihim fahum lā yu'minūn(a).", arti: "Sungguh, pasti berlaku perkataan (hukuman) terhadap kebanyakan mereka, karena mereka tidak beriman." },
+            { no: 8, arab: "اِنَّا جَعَلْنَا فِيْٓ اَعْنَاقِهِمْ اَغْلٰلًا فَهِيَ اِلَى الْاَذْقَانِ فَهُمْ مُّقْمَحُوْنَ", latin: "Innā ja‘alnā fī a‘nāqihim aglālan fahiya ilal-ażqāni fahum muqmaḥūn(a).", arti: "Sungguh, Kami telah memasang belenggu di leher mereka, lalu tangan mereka (diangkat) ke dagu, karena itu mereka tertengadah." },
+            { no: 9, arab: "وَجَعَلْنَا مِنْۢ بَيْنِ اَيْدِيْهِمْ سَدًّا وَّمِنْ خَلْفِهِمْ سَدًّا فَاَغْشَيْنٰهُمْ فَهُمْ لَا يُبْصِرُوْنَ", latin: "Wa ja‘alnā mim baini aidīhim saddaw wa min khalfihim saddan fa agsyaināhum fahum lā yubṣirūn(a).", arti: "Dan Kami jadikan di hadapan mereka sekat (dinding) dan di belakang mereka juga sekat, dan Kami tutup (mata) mereka sehingga mereka tidak dapat melihat." },
+            { no: 10, arab: "وَسَوَاۤءٌ عَلَيْهِمْ ءَاَنْذَرْتَهُمْ اَمْ لَمْ تُنْذِرْهُمْ لَا يُؤْمِنُوْنَ", latin: "Wa sawā'un ‘alaihim a'anżartahum am lam tunżirhum lā yu'minūn(a).", arti: "Dan sama saja bagi mereka, apakah engkau memberi peringatan kepada mereka atau engkau tidak memberi peringatan kepada mereka, mereka tidak akan beriman juga." },
+            { no: 11, arab: "اِنَّمَا تُنْذِرُ مَنِ اتَّبَعَ الذِّكْرَ وَخَشِيَ الرَّحْمٰنَ بِالْغَيْبِۚ فَبَشِّرْهُ بِمَغْفِرَةٍ وَّاَجْرٍ كَرِيْمٍ", latin: "Innamā tunżiru manittaba‘aż-żikra wa khasyiyar-raḥmāna bil-gaib(i), fabasysyirhu bimagfiratiw wa ajring karīm(in).", arti: "Sesungguhnya engkau hanya memberi peringatan kepada orang-orang yang mau mengikuti peringatan dan yang takut kepada Tuhan Yang Maha Pengasih, walaupun mereka tidak melihat-Nya. Maka berilah mereka kabar gembira dengan ampunan dan pahala yang mulia." },
+            { no: 12, arab: "اِنَّا نَحْنُ نُحْيِ الْمَوْتٰى وَنَكْتُبُ مَا قَدَّمُوْا وَاٰثَارَهُمْۗ وَكُلَّ شَيْءٍ اَحْصَيْنٰهُ فِيْٓ اِمَامٍ مُّبِيْنٍ", latin: "Innā naḥnu nuḥyil-mautā wa naktubu mā qaddamū wa āṡārahum, wa kulla syai'in aḥṣaināhu fī imāmim mubīn(in).", arti: "Sungguh, Kamilah yang menghidupkan orang-orang yang mati, dan Kamilah yang mencatat apa yang telah mereka kerjakan dan bekas-bekas yang mereka (tinggalkan). Dan segala sesuatu Kami kumpulkan dalam Kitab yang jelas (Lauh Mahfuzh)." },
+            { no: 13, arab: "وَاضْرِبْ لَهُمْ مَّثَلًا اَصْحٰبَ الْقَرْيَةِۘ اِذْ جَاۤءَهَا الْمُرْسَلُوْنَۚ", latin: "Waḍrib lahum maṡalan aṣḥābal-qaryah(ti), iż jā'ahal-mursalūn(a).", arti: "Dan buatlah suatu perumpamaan bagi mereka, yaitu penduduk suatu negeri, ketika utusan-utusan datang kepada mereka;" },
+            { no: 14, arab: "اِذْ اَرْسَلْنَآ اِلَيْهِمُ اثْنَيْنِ فَكَذَّبُوْهُمَا فَعَزَّزْنَا بِثَالِثٍ فَقَالُوْٓا اِنَّآ اِلَيْكُمْ مُّرْسَلُوْنَ", latin: "Iż arsalnā ilaihimuṡnaini fa każżabūhumā fa ‘azzaznā biṡāliṡin fa qālū innā ilaikum mursalūn(a).", arti: "(Yaitu) ketika Kami mengutus kepada mereka dua orang utusan, lalu mereka mendustakan keduanya; kemudian Kami kuatkan dengan (utusan) yang ketiga, maka ketiga utusan itu berkata, \"Sungguh, kami adalah orang-orang yang diutus kepadamu.\"" },
+            { no: 15, arab: "قَالُوْا مَآ اَنْتُمْ اِلَّا بَشَرٌ مِّثْلُنَاۙ وَمَآ اَنْزَلَ الرَّحْمٰنُ مِنْ شَيْءٍۙ اِنْ اَنْتُمْ اِلَّا تَكْذِبُوْنَ", latin: "Qālū mā antum illā basyarum miṡlunā wa mā anzalar-raḥmānu min syai'(in), in antum illā takżibūn(a).", arti: "Mereka (penduduk negeri) menjawab, \"Kamu ini hanyalah manusia biasa seperti kami, dan Tuhan Yang Maha Pengasih tidak menurunkan sesuatu apa pun; kamu hanyalah pendusta belaka.\"" },
+            { no: 16, arab: "قَالُوْا رَبُّنَا يَعْلَمُ اِنَّآ اِلَيْكُمْ لَمُرْسَلُوْنَ", latin: "Qālū rabbunā ya‘lamu innā ilaikum lamursalūn(a).", arti: "Mereka (utusan-utusan itu) berkata, \"Tuhan kami mengetahui sesungguhnya kami adalah utusan-utusan(-Nya) kepada kamu." },
+            { no: 17, arab: "وَمَا عَلَيْنَآ اِلَّا الْبَلٰغُ الْمُبِيْنُ", latin: "Wa mā ‘alainā illal-balāgul-mubīn(u).", arti: "Dan kewajiban kami hanyalah menyampaikan (perintah Allah) dengan jelas.\"" },
+            { no: 18, arab: "قَالُوْٓا اِنَّا تَطَيَّرْنَا بِكُمْۚ لَىِٕنْ لَّمْ تَنْتَهُوْا لَنَرْجُمَنَّكُمْ وَلَيَمَسَّنَّكُمْ مِّنَّا عَذَابٌ اَلِيْمٌ", latin: "Qālū innā taṭayyarnā bikum, la'il lam tantahū lanarjumannakum wa layamassannakum minnā ‘ażābun alīm(un).", arti: "Mereka menjawab, \"Sesungguhnya kami bernasib malang karena kamu. Sungguh, jika kamu tidak berhenti (menyeru kami), niscaya kami rajam kamu dan kamu pasti akan merasakan siksaan yang pedih dari kami.\"" },
+            { no: 19, arab: "قَالُوْا طَاۤىِٕرُكُمْ مَّعَكُمْۗ اَىِٕنْ ذُكِّرْتُمْۗ بَلْ اَنْتُمْ قَوْمٌ مُّسْرِفُوْنَ", latin: "Qālū ṭā'irukum ma‘akum, a'in żukkirtum, bal antum qaumum musrifūn(a).", arti: "Mereka (utusan-utusan itu) berkata, \"Kemalangan kamu itu adalah karena kamu sendiri. Apakah karena kamu diberi peringatan? Sebenarnya kamu adalah kaum yang melampaui batas.\"" },
+            { no: 20, arab: "وَجَاۤءَ مِنْ اَقْصَا الْمَدِيْنَةِ رَجُلٌ يَّسْعٰى قَالَ يٰقَوْمِ اتَّبِعُوا الْمُرْسَلِيْنَۙ", latin: "Wa jā'a min aqṣal-madīnati rajuluy yas‘ā qāla yā qaumittabi‘ul-mursalīn(a).", arti: "Dan datanglah dari ujung kota, seorang laki-hari dengan bergegas dia berkata, \"Wahai kaumku! Ikutilah utusan-utusan itu." },
+            { no: 21, arab: "اتَّبِعُوْا مَنْ لَّا يَسْـَٔلُكُمْ اَجْرًا وَّهُمْ مُّهْتَدُوْنَ", latin: "Ittabi‘ū mal lā yas'alukum ajraw wa hum muhtadūn(a).", arti: "Ikutilah orang yang tiada minta balasan kepadamu; dan mereka adalah orang-orang yang mendapat petunjuk." },
+            { no: 22, arab: "وَمَا لِيَ لَآ اَعْبُدُ الَّذِيْ فَطَرَنِيْ وَاِلَيْهِ تُرْجَعُوْنَ", latin: "Wa mā liya lā a‘budul-lażī faṭaranī wa ilaihi turja‘ūn(a).", arti: "Dan mengapa aku tidak menyembah (Tuhan) yang telah menciptakanku dan hanya kepada-Nya kamu akan dikembalikan?" },
+            { no: 23, arab: "ءَاَتَّخِذُ مِنْ دُوْنِهٖٓ اٰلِهَةً اِنْ يُّرِدْنِ الرَّحْمٰنُ بِضُرٍّ لَّا تُغْنِ عَنِّيْ شَفَاعَتُهُمْ شَيْـًٔا وَّلَا يُنْقِذُوْنِۚ", latin: "A'attakhiżu min dūnihī ālihatan iy yuridnir-raḥmānu biḍurril lā tugni ‘annī syafā‘atuhum syai'aw wa lā yunqiżūn(i).", arti: "Mengapa aku akan menyembah tuhan-tuhan selain-Nya? Jika (Tuhan) Yang Maha Pengasih menghendaki bencana terhadapku, pastilah syafaat mereka tidak berguna sedikit pun bagi diriku dan mereka tidak dapat menyelamatkanku." },
+            { no: 24, arab: "اِنِّيْٓ اِذًا لَّفِيْ ضَلٰلٍ مُّبِيْنٍ", latin: "Innī iżal lafī ḍalālim mubīn(in).", arti: "Sesungguhnya jika aku berbuat demikian, pastilah aku berada dalam kesesatan yang nyata." },
+            { no: 25, arab: "اِنِّيْٓ اٰمَنْتُ بِرَبِّكُمْ فَاسْمَعُوْنِۗ", latin: "Innī āmantu birabbikum fasma‘ūn(i).", arti: "Sesungguhnya aku telah beriman kepada Tuhanmu; maka dengarkanlah (pengakuan keimanan)ku.\"" },
+            { no: 26, arab: "قِيْلَ ادْخُلِ الْجَنَّةَ ۗقَالَ يٰلَيْتَ قَوْمِيْ يَعْلَمُوْنَۙ", latin: "Qīladkhulil-jannah(ta), qāla yā laita qaumī ya‘lamūn(a).", arti: "Dikatakan (kepadanya), \"Masuklah ke dalam surga.\" Dia (laki-laki itu) berkata, \"Alangkah baiknya sekiranya kaumku mengetahui," },
+            { no: 27, arab: "بِمَا غَفَرَ لِيْ رَبِّيْ وَجَعَلَنِيْ مِنَ الْمُكْرَمِيْنَ", latin: "Bimā gafara lī rabbī wa ja‘alanī minal-mukramīn(a).", arti: "apa yang menyebabkan Tuhanku memberi ampun kepadaku dan menjadikan aku termasuk orang-orang yang dimuliakan.\"" },
+            { no: 28, arab: "۞ وَمَآ اَنْزَلْنَا عَلٰى قَوْمِهٖ مِنْۢ بَعْدِهٖ مِنْ جُنْدٍ مِّنَ السَّمَاۤءِ وَمَا كُنَّا مُنْزِلِيْنَ", latin: "Wa mā anzalnā ‘alā qaumihī mim ba‘dihī min jundim minas-samā'i wa mā kunnā munzilīn(a).", arti: "Dan Kami tidak menurunkan kepada kaumnya sesudah dia (meninggal) suatu pasukan pun dari langit dan Kami tidak pantas menurunkannya." },
+            { no: 29, arab: "اِنْ كَانَتْ اِلَّا صَيْحَةً وَّاحِدَةً فَاِذَا هُمْ خَامِدُوْنَ", latin: "In kānat illā ṣaiḥataw wāḥidatan fa iżā hum khāmidūn(a).", arti: "Tidak ada siksaan terhadap mereka melainkan satu teriakan saja; maka tiba-tiba mereka semuanya mati." },
+            { no: 30, arab: "يٰحَسْرَةً عَلَى الْعِبَادِۚ مَا يَأْتِيْهِمْ مِّنْ رَّسُوْلٍ اِلَّا كَانُوْا بِهٖ يَسْتَهْزِءُوْنَ", latin: "Yā ḥasratan ‘alal-‘ibād(i), mā ya'tīhim mir rasūlin illā kānū bihī yastahzi'ūn(a).", arti: "Alangkah besarnya penyesalan terhadap hamba-hamba itu, setiap datang seorang rasul kepada mereka, mereka selalu memperolok-olokkannya." },
+            { no: 31, arab: "اَلَمْ يَرَوْا كَمْ اَهْلَكْنَا قَبْلَهُمْ مِّنَ الْقُرُوْنِ اَنَّهُمْ اِلَيْهِمْ لَا يَرْجِعُوْنَ", latin: "Alam yarau kam ahlaknā qablahum minal-qurūni annahum ilaihim lā yarji‘ūn(a).", arti: "Tidakkah mereka mengetahui berapa banyak umat-umat sebelum mereka yang telah Kami binasakan. Orang-orang (yang telah Kami binasakan) itu tidak ada yang kembali kepada mereka." },
+            { no: 32, arab: "وَاِنْ كُلٌّ لَّمَّا جَمِيْعٌ لَّدَيْنَا مُحْضَرُوْنَ", latin: "Wa in kullul lammā jamī‘ul ladainā muḥḍarūn(a).", arti: "Dan setiap mereka semuanya akan dikumpulkan lagi kepada Kami." },
+            { no: 33, arab: "وَاٰيَةٌ لَّهُمُ الْاَرْضُ الْمَيْتَةُ ۖاَحْيَيْنٰهَا وَاَخْرَجْنَا مِنْهَا حَبًّا فَمِنْهُ يَأْكُلُوْنَ", latin: "Wa āyatul lahumul-arḍul-maitah(tu), aḥyaināhā wa akhrajnā minhā ḥabban faminhu ya'kulūn(a).", arti: "Dan suatu tanda (kekuasaan Allah) bagi mereka adalah bumi yang mati (tandus); Kami hidupkan bumi itu dan Kami keluarkan daripadanya biji-bijian, maka daripadanya mereka makan." },
+            { no: 34, arab: "وَجَعَلْنَا فِيْهَا جَنّٰتٍ مِّنْ نَّخِيْلٍ وَّاَعْنَابٍ وَّفَجَّرْنَا فِيْهَا مِنَ الْعُيُوْنِۙ", latin: "Wa ja‘alnā fīhā jannātim min nakhīliw wa a‘nābiw wa fajjarnā fīhā minal-‘uyūn(i).", arti: "Dan Kami jadikan padanya di bumi itu kebun-kebun kurma dan anggur dan Kami pancarkan padanya beberapa mata air," },
+            { no: 35, arab: "لِيَأْكُلُوْا مِنْ ثَمَرِهٖۙ وَمَا عَمِلَتْهُ اَيْدِيْهِمْ ۗ اَفَلَا يَشْكُرُوْنَ", latin: "Liya'kulū min ṡamarihī wa mā ‘amilathu aidīhim, afalā yasykurūn(a).", arti: "agar mereka dapat makan dari buahnya, dan dari hasil usaha tangan mereka. Maka mengapakah mereka tidak bersyukur?" },
+            { no: 36, arab: "سُبْحٰنَ الَّذِيْ خَلَقَ الْاَزْوَاجَ كُلَّهَا مِمَّا تُنْبِتُ الْاَرْضُ وَمِنْ اَنْفُسِهِمْ وَمِمَّا لَا يَعْلَمُوْنَ", latin: "Subḥānal-lażī khalaqal-azwāja kullahā mimmā tumbitul-arḍu wa min anfusihim wa mimmā lā ya‘lamūn(a).", arti: "Maha Suci (Allah) yang telah menciptakan semuanya berpasang-pasangan, baik dari apa yang ditumbuhkan oleh bumi dan dari diri mereka maupun dari apa yang tidak mereka ketahui." },
+            { no: 37, arab: "وَاٰيَةٌ لَّهُمُ الَّيْلُ ۖنَسْلَخُ مِنْهُ النَّهَارَ فَاِذَا هُمْ مُّظْلِمُوْنَۙ", latin: "Wa āyatul lahumul-lail(u), naslakhu minhun-nahāra fa iżā hum muẓlimūn(a).", arti: "Dan suatu tanda (kebesaran Allah) bagi mereka adalah malam; Kami tanggalkan siang dari malam itu, maka seketika itu mereka (berada dalam) kegelapan," },
+            { no: 38, arab: "وَالشَّمْسُ تَجْرِيْ لِمُسْتَقَرٍّ لَّهَا ۗذٰلِكَ تَقْدِيْرُ الْعَزِيْزِ الْعَلِيْمِۗ", latin: "Wasy-syamsu tajrī limustaqarril lahā, żālika taqdīrul-‘azīzil-‘alīm(i).", arti: "dan matahari berjalan di tempat peredarannya. Demikianlah ketetapan (Allah) Yang Mahaperkasa, Maha Mengetahui." },
+            { no: 39, arab: "وَالْقَمَرَ قَدَّرْنٰهُ مَنَازِلَ حَتّٰى عَادَ كَالْعُرْجُوْنِ الْقَدِيْمِ", latin: "Wal-qamara qaddarnāhu manāzila ḥattā ‘āda kal-‘urjūnil-qadīm(i).", arti: "Dan telah Kami tetapkan bagi bulan manzilah-manzilah, sehingga (setelah dia sampai ke manzilah yang terakhir) kembalilah dia sebagai bentuk tandan yang tua." },
+            { no: 40, arab: "لَا الشَّمْسُ يَنْۢبَغِيْ لَهَآ اَنْ تُدْرِكَ الْقَمَرَ وَلَا الَّيْلُ سَابِقُ النَّهَارِ ۗوَكُلٌّ فِيْ فَلَكٍ يَّسْبَحُوْنَ", latin: "Lasy-syamsu yambagī lahā an tudrikal-qamara wa lal-lailu sābiqun-nahār(i), wa kullun fī falakiy yasbaḥūn(a).", arti: "Tidaklah mungkin bagi matahari mengejar bulan dan malam pun tidak dapat mendahului siang. Masing-masing beredar pada garis edarnya." },
+            { no: 41, arab: "وَاٰيَةٌ لَّهُمْ اَنَّا حَمَلْنَا ذُرِّيَّتَهُمْ فِى الْفُلْكِ الْمَشْحُوْنِۙ", latin: "Wa āyatul lahum annā ḥamalnā żurriyyatahum fil-fulkil-masyḥūn(i).", arti: "Dan suatu tanda (kebesaran Allah) bagi mereka adalah bahwa Kami angkut keturunan mereka dalam kapal yang penuh muatan," },
+            { no: 42, arab: "وَخَلَقْنَا لَهُمْ مِّنْ مِّثْلِهٖ مَا يَرْكَبُوْنَ", latin: "Wa khalaqnā lahum mim miṡlihī mā yarkabūn(a).", arti: "dan Kami ciptakan (juga) untuk mereka (angkutan lain) seperti apa yang mereka kendarai." },
+            { no: 43, arab: "وَاِنْ نَّشَأْ نُغْرِقْهُمْ فَلَا صَرِيْخَ لَهُمْ وَلَا هُمْ يُنْقَذُوْنَۙ", latin: "Wa in nasya' nugriqhum falā ṣarīkha lahum wa lā hum yunqażūn(a).", arti: "Dan jika Kami menghendaki, Kami tenggelamkan mereka. Maka tidak ada penolong bagi mereka dan tidak (pula) mereka diselamatkan," },
+            { no: 44, arab: "اِلَّا رَحْمَةً مِّنَّا وَمَتَاعًا اِلٰى حِيْنٍ", latin: "Illā raḥmatam minnā wa matā‘an ilā ḥīn(in).", arti: "melainkan karena rahmat dari Kami dan untuk memberikan kesenangan hidup sampai waktu tertentu." },
+            { no: 45, arab: "وَاِذَا قِيْلَ لَهُمُ اتَّقُوْا مَا بَيْنَ اَيْدِيْكُمْ وَمَا خَلْفَكُمْ لَعَلَّكُمْ تُرْحَمُوْنَ", latin: "Wa iżā qīla lahumuttaqū mā baina aidīkum wa mā khalfakum la‘allakum turḥamūn(a).", arti: "Dan apabila dikatakan kepada mereka, \"Takutlah kamu akan siksa yang di hadapanmu (di dunia) dan azab yang akan datang (akhirat) agar kamu mendapat rahmat.\"" },
+            { no: 46, arab: "وَمَا تَأْتِيْهِمْ مِّنْ اٰيَةٍ مِّنْ اٰيٰتِ رَبِّهِمْ اِلَّا كَانُوْا عَنْهَا مُعْرِضِيْنَ", latin: "Wa mā ta'tīhim min āyatim min āyāti rabbihim illā kānū ‘anhā mu‘riḍīn(a).", arti: "Dan setiap kali suatu tanda dari tanda-tanda (kebesaran) Tuhan datang kepada mereka, mereka selalu berpaling daripadanya." },
+            { no: 47, arab: "وَاِذَا قِيْلَ لَهُمْ اَنْفِقُوْا مِمَّا رَزَقَكُمُ اللهُ ۙقَالَ الَّذِيْنَ كَفَرُوْا لِلَّذِيْنَ اٰمَنُوْٓا اَنُطْعِمُ مَنْ لَّوْ يَشَاۤءُ اللهُ اَطْعَمَهٗٓ ۖاِنْ اَنْتُمْ اِلَّا فِيْ ضَلٰلٍ مُّبِيْنٍ", latin: "Wa iżā qīla lahum anfiqū mimmā razaqakumullāh(u), qālal-lażīna kafarū lil-lażīna āmanū anuṭ‘imu mal lau yasyā'ullāhu aṭ‘amahū, in antum illā fī ḍalālim mubīn(in).", arti: "Dan apabila dikatakan kepada mereka, \"Infakkanlah sebagian rezeki yang diberikan Allah kepadamu,\" orang-orang yang kafir itu berkata kepada orang-orang yang beriman, \"Apakah pantas kami memberi makan kepada orang-orang yang jika Allah menghendaki Dia akan memberinya makan? Kamu benar-benar dalam kesesatan yang nyata.\"" },
+            { no: 48, arab: "وَيَقُوْلُوْنَ مَتٰى هٰذَا الْوَعْدُ اِنْ كُنْتُمْ صٰدِقِيْنَ", latin: "Wa yaqūlūna matā hāżal-wa‘du in kuntum ṣādiqīn(a).", arti: "Dan mereka berkata, \"Kapan janji (hari berbangkit) itu (terjadi) jika kamu orang yang benar?\"" },
+            { no: 49, arab: "مَا يَنْظُرُوْنَ اِلَّا صَيْحَةً وَّاحِدَةً تَأْخُذُهُمْ وَهُمْ يَخِصِّمُوْنَ", latin: "Mā yanẓurūna illā ṣaiḥataw wāḥidatan ta'khużuhum wa hum yakhiṣṣimūn(a).", arti: "Mereka hanya menunggu satu teriakan, yang akan membinasakan mereka ketika mereka sedang bertengkar." },
+            { no: 50, arab: "فَلَا يَسْتَطِيْعُوْنَ تَوْصِيَةً وَّلَآ اِلٰٓى اَهْلِهِمْ يَرْجِعُوْنَ", latin: "Falā yastaṭī‘ūna tauṣiyataw wa lā ilā ahlihim yarji‘ūn(a).", arti: "Sehingga mereka tidak dapat berwasiat dan tidak dapat kembali kepada keluarganya." },
+            { no: 51, arab: "وَنُفِخَ فِى الصُّوْرِ فَاِذَا هُمْ مِّنْ الْاَجْدَاثِ اِلٰى رَبِّهِمْ يَنْسِلُوْنَ", latin: "Wa nufikha fiṣ-ṣūri fa iżā hum minal-ajdāṡi ilā rabbihim yansilūn(a).", arti: "Lalu ditiuplah sangkakala, maka seketika itu mereka keluar dari kuburnya (dalam keadaan hidup), menuju kepada Tuhannya." },
+            { no: 52, arab: "قَالُوْا يٰوَيْلَنَا مَنْۢ بَعَثَنَا مِنْ مَّرْقَدِنَا ۜهٰذَا مَا وَعَدَ الرَّحْمٰنُ وَصَدَقَ الْمُرْسَلُوْنَ", latin: "Qālū yā wailanā mam ba‘aṡanā mim marqadinā, hāżā mā wa‘adar-raḥmānu wa ṣadaqal-mursalūn(a).", arti: "Mereka berkata, \"Celakalah kami! Siapakah yang membangkitkan kami dari tempat tidur kami (kubur)?\" Inilah yang dijanjikan (Tuhan) Yang Maha Pengasih dan benarlah rasul-rasul(-Nya)." },
+            { no: 53, arab: "اِنْ كَانَتْ اِلَّا صَيْحَةً وَّاحِدَةً فَاِذَا هُمْ جَمِيْعٌ لَّدَيْنَا مُحْضَرُوْنَ", latin: "In kānat illā ṣaiḥataw wāḥidatan fa iżā hum jamī‘ul ladainā muḥḍarūn(a).", arti: "Teriakan itu hanya sekali saja, maka seketika itu mereka semua dihadapkan kepada Kami (untuk dihisab)." },
+            { no: 54, arab: "فَالْيَوْمَ لَا تُظْلَمُ نَفْسٌ شَيْـًٔا وَّلَا تُجْزَوْنَ اِلَّا مَا كُنْتُمْ تَعْمَلُوْنَ", latin: "Fal-yauma lā tuẓlamu nafsun syai'aw wa lā tujzauna illā mā kuntum ta‘malūn(a).", arti: "Maka pada hari itu seseorang tidak akan dirugikan sedikit pun dan kamu tidak akan diberi balasan, kecuali sesuai dengan apa yang telah kamu kerjakan." },
+            { no: 55, arab: "اِنَّ اَصْحٰبَ الْجَنَّةِ الْيَوْمَ فِيْ شُغُلٍ فٰكِهُوْنَ ۚ", latin: "Inna aṣḥābal-jannatil-yauma fī syugulin fākihūn(a).", arti: "Sesungguhnya penghuni surga pada hari itu bersenang-senang dalam kesibukan (mereka)." },
+            { no: 56, arab: "هُمْ وَاَزْوَاجُهُمْ فِيْ ظِلٰلٍ عَلَى الْاَرَاۤىِٕكِ مُتَّكِـُٔوْنَ", latin: "Hum wa azwājuhum fī ẓilālin ‘alal-arā'iki muttaki'ūn(a).", arti: "Mereka dan pasangan-pasangannya berada dalam tempat yang teduh, bersandar di atas dipan-dipan." },
+            { no: 57, arab: "لَهُمْ فِيْهَا فَاكِهَةٌ وَّلَهُمْ مَّا يَدَّعُوْنَ ۚ", latin: "Lahum fīhā fākihatuw wa lahum mā yadda‘ūn(a).", arti: "Di surga itu mereka memperoleh buah-buahan dan memperoleh apa saja yang mereka inginkan." },
+            { no: 58, arab: "سَلٰمٌ ۗقَوْلًا مِّنْ رَّبٍّ رَّحِيْمٍ", latin: "Salāmun qaulam mir rabbir raḥīm(in).", arti: "(Kepada mereka dikatakan), \"Salam,\" sebagai ucapan selamat dari Tuhan Yang Maha Penyayang." },
+            { no: 59, arab: "وَامْتَازُوا الْيَوْمَ اَيُّهَا الْمُجْرِمُوْنَ", latin: "Wamtāzul-yauma ayyuhal-mujrimūn(a).", arti: "Dan (dikatakan kepada orang-orang kafir), \"Berpisahlah kamu (dari orang-orang mukmin) pada hari ini, wahai orang-orang yang berdosa!" },
+            { no: 60, arab: "اَلَمْ اَعْهَدْ اِلَيْكُمْ يٰبَنِيْٓ اٰدَمَ اَنْ لَّا تَعْبُدُوا الشَّيْطٰنَۚ اِنَّهٗ لَكُمْ عَدُوٌّ مُّبِيْنٌ", latin: "Alam a‘had ilaikum yā banī ādama al lā ta‘budusy-syaiṭān(a), innahū lakum ‘aduwwum mubīn(un).", arti: "Bukankah Aku telah memerintahkan kepadamu wahai anak cucu Adam agar kamu tidak menyembah setan? Sungguh, setan itu musuh yang nyata bagi kamu," },
+            { no: 61, arab: "وَّاَنِ اعْبُدُوْنِيْ ۗهٰذَا صِرَاطٌ مُّسْتَقِيْمٌ", latin: "Wa ani‘budūnī, hāżā ṣirāṭum mustaqīm(un).", arti: "dan hendaklah kamu menyembah-Ku. Inilah jalan yang lurus.\"" },
+            { no: 62, arab: "وَلَقَدْ اَضَلَّ مِنْكُمْ جِبِلًّا كَثِيْرًا ۗاَفَلَمْ تَكُوْنُوْا تَعْقِلُوْنَ", latin: "Wa laqad aḍalla minkum jibillan kaṡīrā(n), afalam takūnū ta‘qilūn(a).", arti: "Dan sungguh, ia (setan itu) telah menyesatkan sebagian besar di antara kamu. Maka apakah kamu tidak mengerti?" },
+            { no: 63, arab: "هٰذِهٖ جَهَنَّمُ الَّتِيْ كُنْتُمْ تُوْعَدُوْنَ", latin: "Hāżihī jahannamul-latī kuntum tū‘adūn(a).", arti: "Inilah (neraka) Jahanam yang dahulu telah dijanjikan kepadamu." },
+            { no: 64, arab: "اِصْلَوْهَا الْيَوْمَ بِمَا كُنْتُمْ تَكْفُرُوْنَ", latin: "Iṣlauhal-yauma bimā kuntum takfurūn(a).", arti: "Masuklah ke dalamnya pada hari ini karena kamu dahulu mengingkarinya." },
+            { no: 65, arab: "اَلْيَوْمَ نَخْتِمُ عَلٰٓى اَفْوَاهِهِمْ وَتُكَلِّمُنَآ اَيْدِيْهِمْ وَتَشْهَدُ اَرْجُلُهُمْ بِمَا كَانُوْا يَكْسِبُوْنَ", latin: "Al-yauma nakhtimu ‘alā afwāhihim wa tukallimunā aidīhim wa tasyhadu arjuluhum bimā kānū yaksibūn(a).", arti: "Pada hari ini Kami tutup mulut mereka; tangan mereka akan berkata kepada Kami dan kaki mereka akan memberi kesaksian terhadap apa yang dahulu mereka kerjakan." },
+            { no: 66, arab: "وَلَوْ نَشَاۤءُ لَطَمَسْنَا عَلٰٓى اَعْيُنِهِمْ فَاسْتَبَقُوا الصِّرَاطَ فَاَنّٰى يُبْصِرُوْنَ", latin: "Wa lau nasyā'u laṭamasnā ‘alā a‘yunihim fastabaquṣ-ṣirāṭa fa annā yubṣirūn(a).", arti: "Dan jika Kami menghendaki, pastilah Kami hapuskan penglihatan mata mereka; lalu mereka berlomba-lomba (mencari) jalan. Maka bagaimana mungkin mereka dapat melihat?" },
+            { no: 67, arab: "وَلَوْ نَشَاۤءُ لَمَسَخْنٰهُمْ عَلٰى مَكَانَتِهِمْ فَمَا اسْتَطَاعُوْا مُضِيًّا وَّلَا يَرْجِعُوْنَ", latin: "Wa lau nasyā'u lamasakhnāhum ‘alā makānatihim famastaṭā‘ū muḍiyyaw wa lā yarji‘ūn(a).", arti: "Dan jika Kami menghendaki, pastilah Kami ubah bentuk mereka di tempat mereka berada; sehingga mereka tidak sanggup berjalan lagi dan juga tidak sanggup kembali." },
+            { no: 68, arab: "وَمَنْ نُّعَمِّرْهُ نُنَكِّسْهُ فِى الْخَلْقِۗ اَفَلَا يَعْقِلُوْنَ", latin: "Wa man nu‘ammirhu nunakkishu fil-khalq(i), afalā ya‘qilūn(a).", arti: "Dan barang siapa Kami panjangkan umurnya niscaya Kami kembalikan dia kepada awal kejadian(nya). Maka mengapa mereka tidak mengerti?" },
+            { no: 69, arab: "وَمَا عَلَّمْنٰهُ الشِّعْرَ وَمَا يَنْۢبَغِيْ لَهٗ ۗاِنْ هُوَ اِلَّا ذِكْرٌ وَّقُرْاٰنٌ مُّبِيْنٌ ۙ", latin: "Wa mā ‘allamnāhusy-syi‘ra wa mā yambagī lah(ū), in huwa illā żikruw wa qur'ānum mubīn(un).", arti: "Dan Kami tidak mengajarkan syair kepadanya (Muhammad) dan bersyair itu tidaklah pantas baginya. Al-Qur'an itu tidak lain hanyalah pelajaran dan Kitab yang jelas," },
+            { no: 70, arab: "لِّيُنْذِرَ مَنْ كَانَ حَيًّا وَّيَحِقَّ الْقَوْلُ عَلَى الْكَافِرِيْنَ", latin: "Liyunżira man kāna ḥayyaw wa yaḥiqqal-qaulu ‘alal-kāfirīn(a).", arti: "agar dia (Muhammad) memberi peringatan kepada orang-orang yang hidup (hatinya) dan agar pasti ketetapan (azab) terhadap orang-orang kafir." },
+            { no: 71, arab: "اَوَلَمْ يَرَوْا اَنَّا خَلَقْنَا لَهُمْ مِّمَّا عَمِلَتْ اَيْدِيْنَآ اَنْعَامًا فَهُمْ لَهَا مَالِكُوْنَ", latin: "Awalam yarau annā khalaqnā lahum mimmā ‘amilat aidīnā an‘āman fahum lahā mālikūn(a).", arti: "Dan tidakkah mereka melihat bahwa Kami telah menciptakan hewan ternak untuk mereka, yaitu sebagian dari apa yang telah Kami ciptakan dengan kekuasaan Kami, lalu mereka menguasainya?" },
+            { no: 72, arab: "وَذَلَّلْنٰهَا لَهُمْ فَمِنْهَا رَكُوْبُهُمْ وَمِنْهَا يَأْكُلُوْنَ", latin: "Wa żallalnāhā lahum faminhā rakūbuhum wa minhā ya'kulūn(a).", arti: "Dan Kami menundukkannya (hewan-hewan itu) untuk mereka; lalu sebagiannya untuk menjadi tunggangan mereka dan sebagian untuk mereka makan." },
+            { no: 73, arab: "وَلَهُمْ فِيْهَا مَنَافِعُ وَمَشَارِبُۗ اَفَلَا يَشْكُرُوْنَ", latin: "Wa lahum fīhā manāfi‘u wa masyārib(u), afalā yasykurūn(a).", arti: "Dan mereka memperoleh berbagai manfaat dan minuman daripadanya. Maka mengapa mereka tidak bersyukur?" },
+            { no: 74, arab: "وَاتَّخَذُوْا مِنْ دُوْنِ اللهِ اٰلِهَةً لَّعَلَّهُمْ يُنْصَرُوْنَ ۗ", latin: "Wattakhażū min dūnillāhi ālihatal la‘allahum yunṣarūn(a).", arti: "Dan mereka mengambil sesembahan selain Allah agar mereka mendapat pertolongan." },
+            { no: 75, arab: "لَا يَسْتَطِيْعُوْنَ نَصْرَهُمْۙ وَهُمْ لَهُمْ جُنْدٌ مُّحْضَرُوْنَ", latin: "Lā yastaṭī‘ūna naṣrahum wa hum lahum jundum muḥḍarūn(a).", arti: "Mereka (sesembahan itu) tidak dapat menolong mereka; padahal mereka itu menjadi tentara yang disiapkan untuk menjaga (sesembahan itu)." },
+            { no: 76, arab: "فَلَا يَحْزُنْكَ قَوْلُهُمْ ۘاِنَّا نَعْلَمُ مَا يُسِرُّوْنَ وَمَا يُعْلِنُوْنَ", latin: "Falā yaḥzunka qauluhum, innā na‘lamu mā yusirrūna wa mā yu‘linūn(a).", arti: "Maka jangan sampai ucapan mereka membuat engkau (Muhammad) bersedih hati. Sungguh, Kami mengetahui apa yang mereka rahasiakan dan apa yang mereka nyatakan." },
+            { no: 77, arab: "اَوَلَمْ يَرَ الْاِنْسَانُ اَنَّا خَلَقْنٰهُ مِنْ نُّطْفَةٍ فَاِذَا هُوَ خَصِيْمٌ مُّبِيْنٌ", latin: "Awalam yaral-insānu annā khalaqnāhu min nuṭfatin fa iżā huwa khaṣīmum mubīn(un).", arti: "Dan tidakkah manusia memperhatikan bahwa Kami menciptakannya dari setetes mani, ternyata dia menjadi musuh yang nyata!" },
+            { no: 78, arab: "وَضَرَبَ لَنَا مَثَلًا وَّنَسِيَ خَلْقَهٗۗ قَالَ مَنْ يُّحْيِ الْعِظَامَ وَهِيَ رَمِيْمٌ", latin: "Wa ḍaraba lanā maṡalaw wa nasiya khalqah(ū), qāla may yuḥyil-‘iẓāma wa hiya ramīm(un).", arti: "Dan dia membuat perumpamaan bagi Kami dan melupakan asal kejadiannya; dia berkata, \"Siapakah yang dapat menghidupkan tulang-belulang, yang telah hancur luluh?\"" },
+            { no: 79, arab: "قُلْ يُحْيِيْهَا الَّذِيْٓ اَنْشَاَهَآ اَوَّلَ مَرَّةٍ ۗوَهُوَ بِكُلِّ خَلْقٍ عَلِيْمٌ ۙ", latin: "Qul yuḥyīhal-lażī ansya'ahā awwala marrah(tin), wa huwa bikulli khalqin ‘alīm(un).", arti: "Katakanlah (Muhammad), \"Yang akan menghidupkannya ialah (Allah) yang menciptakannya pertama kali. Dan Dia Maha Mengetahui tentang segala makhluk," },
+            { no: 80, arab: "ۨالَّذِيْ جَعَلَ لَكُمْ مِّنَ الشَّجَرِ الْاَخْضَرِ نَارًاۙ فَاِذَآ اَنْتُمْ مِّنْهُ تُوْقِدُوْنَ", latin: "Allażī ja‘ala lakum minasy-syajaril-akhḍari nārā(n), fa iżā antum minhu tūqidūn(a).", arti: "yaitu (Allah) yang menjadikan api untukmu dari kayu yang hijau, maka seketika itu kamu nyalakan (api) daripadanya.\"" },
+            { no: 81, arab: "اَوَلَيْسَ الَّذِيْ خَلَقَ السَّمٰوٰتِ وَالْاَرْضَ بِقٰدِرٍ عَلٰٓى اَنْ يَّخْلُقَ مِثْلَهُمْ ۗبَلٰى وَهُوَ الْخَلّٰقُ الْعَلِيْمُ", latin: "Awa laisal-lażī khalaqas-samāwāti wal-arḍa biqādirin ‘alā ay yakhluqa miṡlahum, balā wa huwal-khallāqul-‘alīm(u).", arti: "Dan bukankah (Allah) yang menciptakan langit dan bumi, mampu menciptakan kembali yang serupa itu (jasad mereka yang sudah hancur itu)? Benar, dan Dia Maha Pencipta, Maha Mengetahui." },
+            { no: 82, arab: "اِنَّمَآ اَمْرُهٗٓ اِذَآ اَرَادَ شَيْـًٔاۖ اَنْ يَّقُوْلَ لَهٗ كُنْ فَيَكُوْنُ", latin: "Innamā amruhū iżā arāda syai'an ay yaqūla lahū kun fa yakūn(u).", arti: "Sesungguhnya urusan-Nya apabila Dia menghendaki sesuatu Dia hanya berkata kepadanya, \"Jadilah!\" Maka jadilah sesuatu itu." },
+            { no: 83, arab: "فَسُبْحٰنَ الَّذِيْ بِيَدِهٖ مَلَكُوْتُ كُلِّ شَيْءٍ وَّاِلَيْهِ تُرْجَعُوْنَ ࣖ", latin: "Fa subḥānal-lażī biyadihī malakūtu kulli syai'iw wa ilaihi turja‘ūn(a).", arti: "Maka Mahasuci (Allah) yang di tangan-Nya kekuasaan atas segala sesuatu dan kepada-Nya kamu dikembalikan." }
         ];
 
         function App() {
@@ -90,13 +157,11 @@
           const [showYasin, setShowYasin] = useState(false);
           const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(false);
 
-          // State Auth
           const [username, setUsername] = useState('');
           const [password, setPassword] = useState('');
           const [loginError, setLoginError] = useState('');
           const [showPassword, setShowPassword] = useState(false);
 
-          // State Form
           const [formData, setFormData] = useState({
             nama: '', tglWafat: '', namaMakam: '', baris: 1, nisan: 1, sejarah: ''
           });
@@ -111,51 +176,42 @@
           const [editDataForm, setEditDataForm] = useState({});
           const [deleteDataConfirmId, setDeleteDataConfirmId] = useState(null);
 
-          // Sinkronisasi form dengan daftar makam yang ada
           useEffect(() => {
             if (daftarMakam.length > 0 && !daftarMakam.includes(formData.namaMakam)) {
               setFormData(prev => ({ ...prev, namaMakam: daftarMakam[0] }));
             }
           }, [daftarMakam, formData.namaMakam]);
 
-          // GET DATA DARI FIREBASE (DENGAN TIMEOUT DAN ERROR HANDLING)
           useEffect(() => {
             const fetchFromFirebase = async () => {
               if (firebaseConfig.apiKey === "API_KEY_FIREBASE_ANDA") return;
-              
               setIsLoading(true);
 
-              // Fallback jika Firestore menggantung (hang) karena database belum di-create
               const timeoutId = setTimeout(() => {
                   setIsLoading(false);
-                  alert("Koneksi ke Database sangat lama! \n\nPastikan Anda sudah mengklik tombol 'Create Database' di menu Firestore Database pada akun Firebase Anda.");
+                  alert("Koneksi lambat! Pastikan Database Firestore sudah di-create.");
               }, 8000);
 
               try {
-                // 1. Ambil Koleksi Area Makam
                 const areaSnapshot = await db.collection("areas").get();
                 const areasList = areaSnapshot.docs.map(doc => doc.id); 
                 
-                // 2. Ambil Koleksi Data Almarhum
                 const almarhumSnapshot = await db.collection("almarhum").get();
                 const almarhumList = almarhumSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                clearTimeout(timeoutId); // Berhasil, matikan fungsi timeout
+                clearTimeout(timeoutId); 
                 setDaftarMakam(areasList);
                 setDataMakam(almarhumList);
                 setIsFirebaseConfigured(true);
                 setIsLoading(false);
               } catch (error) {
-                clearTimeout(timeoutId); // Error terjadi, matikan timeout
-                console.error("Error mengambil data dari Firebase:", error);
-                
+                clearTimeout(timeoutId);
+                console.error(error);
                 let pesanError = "Gagal terhubung ke Database.\n";
                 if (error.message.includes("Missing or insufficient permissions")) {
-                    pesanError += "\nSebab: Aturan Keamanan (Rules) Anda memblokir akses. Ubah 'allow read, write: if false;' menjadi 'allow read, write: if true;'";
+                    pesanError += "\nUbah Rules Firebase menjadi 'allow read, write: if true;'";
                 }
-                
                 alert(pesanError);
-                setLoginError(pesanError);
                 setIsLoading(false);
               }
             };
@@ -204,14 +260,9 @@
               setDaftarMakam([...daftarMakam, newMakamName.trim()]);
               setNewMakamName('');
               showSuccess('Area Makam baru berhasil ditambahkan!');
-            } catch(err) {
-              alert("Error: " + err.message);
-            }
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
           };
-
-          const confirmDeleteMakam = (index) => setDeleteConfirmIndex(index);
-          const cancelDeleteMakam = () => setDeleteConfirmIndex(null);
 
           const executeDeleteMakamList = async (index) => {
             setIsLoading(true);
@@ -226,8 +277,8 @@
                 setFormData(prev => ({ ...prev, namaMakam: newDaftar[0] || '' }));
               }
               setDeleteConfirmIndex(null);
-              showSuccess('Area Makam berhasil dihapus!');
-            } catch(err) { alert("Error: " + err.message); }
+              showSuccess('Area dihapus!');
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
           };
 
@@ -242,109 +293,76 @@
                   const batch = db.batch();
                   batch.set(db.collection("areas").doc(newName), { name: newName });
                   batch.delete(db.collection("areas").doc(oldName));
-                  
                   const snapshot = await db.collection("almarhum").where("namaMakam", "==", oldName).get();
-                  snapshot.docs.forEach(doc => {
-                      batch.update(doc.ref, { namaMakam: newName });
-                  });
+                  snapshot.docs.forEach(doc => { batch.update(doc.ref, { namaMakam: newName }); });
                   await batch.commit();
               }
-
               const newDaftar = [...daftarMakam];
               newDaftar[index] = newName;
               setDaftarMakam(newDaftar);
-
-              setDataMakam(prevData => prevData.map(item => 
-                item.namaMakam === oldName ? { ...item, namaMakam: newName } : item
-              ));
-
+              setDataMakam(prevData => prevData.map(item => item.namaMakam === oldName ? { ...item, namaMakam: newName } : item));
               if (formData.namaMakam === oldName) setFormData(prev => ({ ...prev, namaMakam: newName }));
-              
               setEditMakamIndex(null);
               setEditMakamValue('');
-              showSuccess('Nama Makam berhasil diperbarui!');
-            } catch(err) { alert("Error: " + err.message); }
+              showSuccess('Diperbarui!');
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
           };
 
           const handleFormChange = (e) => {
             const { name, value } = e.target;
             setFormData(prev => ({
-              ...prev,
-              [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value
+              ...prev, [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value
             }));
           };
 
           const handleAddData = async (e) => {
             e.preventDefault();
             if (!formData.nama || !formData.tglWafat || !formData.namaMakam || !formData.baris || !formData.nisan) {
-              setLoginError('Kolom bertanda (*) harus diisi!');
-              return;
+              setLoginError('Kolom bertanda (*) harus diisi!'); return;
             }
-
             setIsLoading(true);
-            // Include 'sejarah' in payload
             const newDataPayload = { ...formData, baris: parseInt(formData.baris), nisan: parseInt(formData.nisan) };
-            
             try {
               let newId = Date.now().toString();
               if (isFirebaseConfigured) {
-                  const docRef = await db.collection("almarhum").add({
-                      ...newDataPayload,
-                      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                  });
+                  const docRef = await db.collection("almarhum").add({ ...newDataPayload, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                   newId = docRef.id;
               }
-              const newData = { id: newId, ...newDataPayload };
-              
-              setDataMakam(prev => [newData, ...prev]);
-              showSuccess(`Data almarhum ${formData.nama} berhasil ditambahkan!`);
+              setDataMakam(prev => [{ id: newId, ...newDataPayload }, ...prev]);
+              showSuccess('Data ditambahkan!');
               setLoginError('');
               setFormData({ nama: '', tglWafat: '', namaMakam: daftarMakam[0] || '', baris: 1, nisan: 1, sejarah: '' });
-            } catch(err) { alert("Error: " + err.message); }
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
-          };
-
-          const startEditData = (makam) => {
-            setEditDataId(makam.id);
-            setEditDataForm({ ...makam });
-            setDeleteDataConfirmId(null);
           };
 
           const handleEditDataChange = (e) => {
             const { name, value } = e.target;
-            setEditDataForm(prev => ({
-              ...prev,
-              [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value
-            }));
+            setEditDataForm(prev => ({ ...prev, [name]: (name === 'baris' || name === 'nisan') ? parseInt(value) || '' : value }));
           };
 
           const saveEditData = async () => {
             if (!editDataForm.nama || !editDataForm.tglWafat || !editDataForm.namaMakam || !editDataForm.baris || !editDataForm.nisan) return;
             setIsLoading(true);
             try {
-              // Ensure sejarah is included if it was undefined in old data
               const payloadToUpdate = { ...editDataForm, sejarah: editDataForm.sejarah || '', baris: parseInt(editDataForm.baris), nisan: parseInt(editDataForm.nisan) };
-              if (isFirebaseConfigured) {
-                  await db.collection("almarhum").doc(editDataId).update(payloadToUpdate);
-              }
+              if (isFirebaseConfigured) await db.collection("almarhum").doc(editDataId).update(payloadToUpdate);
               setDataMakam(prev => prev.map(item => item.id === editDataId ? payloadToUpdate : item));
               setEditDataId(null);
-              showSuccess('Data penghuni makam berhasil diperbarui!');
-            } catch(err) { alert("Error: " + err.message); }
+              showSuccess('Diperbarui!');
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
           };
 
           const executeDeleteData = async (id) => {
             setIsLoading(true);
             try {
-              if (isFirebaseConfigured) {
-                  await db.collection("almarhum").doc(id).delete();
-              }
+              if (isFirebaseConfigured) await db.collection("almarhum").doc(id).delete();
               setDataMakam(prev => prev.filter(item => item.id !== id));
               setDeleteDataConfirmId(null);
-              showSuccess('Data penghuni makam berhasil dihapus!');
-            } catch(err) { alert("Error: " + err.message); }
+              showSuccess('Dihapus!');
+            } catch(err) { alert(err.message); }
             setIsLoading(false);
           };
 
@@ -372,33 +390,20 @@
                   <div className="flex flex-wrap items-center gap-2">
                     {(view === 'public' || view === 'panduan') && (
                       <div className="flex gap-2 mr-2 border-r border-emerald-700 pr-4">
-                        <button 
-                          onClick={() => {setView('public'); setSelectedMakam(null);}} 
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'public' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}
-                        >
+                        <button onClick={() => {setView('public'); setSelectedMakam(null);}} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'public' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}>
                           <Search size={16} /> Pencarian
                         </button>
-                        <button 
-                          onClick={() => setView('panduan')} 
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'panduan' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}
-                        >
+                        <button onClick={() => setView('panduan')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'panduan' ? 'bg-emerald-600 font-bold' : 'hover:bg-emerald-700 text-emerald-100'}`}>
                           <BookOpen size={16} /> Panduan Ziarah
                         </button>
                       </div>
                     )}
-
                     {view === 'admin' ? (
-                      <button onClick={handleLogout} className="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-950 px-4 py-2 rounded-lg text-sm transition-colors">
-                        <LogOut size={16} /> Keluar Admin
-                      </button>
+                      <button onClick={handleLogout} className="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-950 px-4 py-2 rounded-lg text-sm transition-colors"><LogOut size={16} /> Keluar Admin</button>
                     ) : view === 'login' ? (
-                       <button onClick={() => setView('public')} className="flex items-center gap-2 text-emerald-200 hover:text-white text-sm transition-colors">
-                        <ArrowLeft size={16} /> Kembali
-                      </button>
+                       <button onClick={() => setView('public')} className="flex items-center gap-2 text-emerald-200 hover:text-white text-sm transition-colors"><ArrowLeft size={16} /> Kembali</button>
                     ) : (
-                       <button onClick={() => setView('login')} className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm transition-colors border border-emerald-600">
-                        <Lock size={16} /> Petugas
-                      </button>
+                       <button onClick={() => setView('login')} className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm transition-colors border border-emerald-600"><Lock size={16} /> Petugas</button>
                     )}
                   </div>
                 </div>
@@ -406,109 +411,70 @@
 
               <main className="max-w-5xl mx-auto p-4 md:p-6">
                 
-                {/* --- VIEW PANDUAN --- */}
+                {}
                 {view === 'panduan' && (
                   <div className="space-y-6 animate-in fade-in duration-500">
                     <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-stone-200">
                       <div className="text-center mb-8 border-b border-stone-100 pb-6">
-                        <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <BookOpen size={32} className="text-emerald-700" />
-                        </div>
+                        <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><BookOpen size={32} className="text-emerald-700" /></div>
                         <h2 className="text-2xl md:text-3xl font-bold text-stone-800">Tata Cara Ziarah Kubur</h2>
-                        <p className="text-stone-500 mt-2">Adab dan tuntunan saat mengunjungi makam keluarga dan kaum muslimin.</p>
+                        <p className="text-stone-500 mt-2">Adab dan tuntunan saat mengunjungi makam.</p>
                       </div>
 
                       <div className="space-y-8 max-w-3xl mx-auto">
                         <div className="flex gap-4">
                           <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
-                          <div>
-                            <h3 className="text-lg font-bold text-stone-800 mb-1">Berwudhu Terlebih Dahulu</h3>
-                            <p className="text-stone-600 leading-relaxed">Disunnahkan dalam keadaan suci (berwudhu) sebelum memasuki area pekuburan.</p>
-                          </div>
+                          <div><h3 className="text-lg font-bold text-stone-800 mb-1">Berwudhu Terlebih Dahulu</h3><p className="text-stone-600 leading-relaxed">Disunnahkan dalam keadaan suci sebelum memasuki area pekuburan.</p></div>
                         </div>
-
                         <div className="flex gap-4">
                           <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">2</div>
                           <div>
                             <h3 className="text-lg font-bold text-stone-800 mb-1">Mengucapkan Salam Saat Masuk</h3>
-                            <div className="bg-stone-50 p-4 rounded-lg mt-2 border border-stone-100">
-                              <p className="text-stone-800 font-medium italic text-center text-lg mb-2">"Assalâmu 'alâ ahlid diyâr minal mu'minîna wal muslimîn..."</p>
-                            </div>
+                            <div className="bg-stone-50 p-4 rounded-lg mt-2 border border-stone-100"><p className="text-stone-800 font-medium italic text-center text-lg mb-2">"Assalâmu 'alâ ahlid diyâr minal mu'minîna wal muslimîn..."</p></div>
                           </div>
                         </div>
-
                         <div className="flex gap-4">
                           <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">3</div>
-                          <div>
-                            <h3 className="text-lg font-bold text-stone-800 mb-1">Menjaga Adab: Tidak Menginjak/Menduduki Nisan</h3>
-                            <p className="text-stone-600 leading-relaxed">Berjalanlah melalui sela-sela antar makam. Dilarang keras duduk, menginjak, atau melangkah tepat di atas gundukan makam.</p>
-                          </div>
+                          <div><h3 className="text-lg font-bold text-stone-800 mb-1">Menjaga Adab</h3><p className="text-stone-600 leading-relaxed">Dilarang keras duduk, menginjak, atau melangkah tepat di atas gundukan makam.</p></div>
                         </div>
-
                         <div className="flex gap-4">
                           <div className="shrink-0 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-lg">4</div>
-                          <div>
-                            <h3 className="text-lg font-bold text-stone-800 mb-1">Membaca Doa dan Ayat Suci Al-Quran</h3>
-                            <p className="text-stone-600 leading-relaxed">Posisikan diri menghadap wajah ahli kubur. Bacakan doa memohon ampunan untuk ahli kubur.</p>
-                          </div>
+                          <div><h3 className="text-lg font-bold text-stone-800 mb-1">Membaca Doa dan Ayat Suci Al-Quran</h3><p className="text-stone-600 leading-relaxed">Posisikan diri menghadap wajah ahli kubur. Bacakan doa memohon ampunan.</p></div>
                         </div>
                       </div>
 
                       <div className="mt-12 pt-8 border-t border-stone-200 max-w-3xl mx-auto">
                         <div className="text-center mb-8">
-                          <h3 className="text-2xl font-bold text-emerald-900 mb-2 flex items-center justify-center gap-3">
-                            <BookOpen className="text-emerald-600" size={24} /> Kumpulan Doa Ziarah Kubur
-                          </h3>
+                          <h3 className="text-2xl font-bold text-emerald-900 mb-2 flex items-center justify-center gap-3"><BookOpen className="text-emerald-600" size={24} /> Kumpulan Doa Ziarah Kubur</h3>
                         </div>
-                        
                         <div className="space-y-6">
                           <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
-                            <h4 className="font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4">1. Doa Salam (Saat Memasuki Area Makam)</h4>
-                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">
-                              السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ، وَإِنَّا إِنْ شَاءَ اللهُ بِكُمْ لَلَاحِقُونَ، أَسْأَلُ اللهَ لَنَا وَلَكُمُ الْعَافِيَةَ
-                            </p>
+                            <h4 className="font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4">1. Doa Salam (Masuk Area Makam)</h4>
+                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ...</p>
                           </div>
-
                           <div className="bg-emerald-50 rounded-xl p-5 md:p-6 border border-emerald-100 shadow-sm">
-                            <div className="border-b border-emerald-200 pb-2 mb-4">
-                              <h4 className="font-bold text-emerald-800">2. Doa Memohon Ampunan untuk Almarhum/ah</h4>
-                            </div>
-                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">
-                              اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ...
-                            </p>
+                            <div className="border-b border-emerald-200 pb-2 mb-4"><h4 className="font-bold text-emerald-800">2. Doa Memohon Ampunan</h4></div>
+                            <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 mb-4" dir="rtl">اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ...</p>
                           </div>
                         </div>
                       </div>
                       
-                      {/* SECTION BACAAN SURAT YASIN */}
                       <div className="mt-12 pt-8 border-t border-stone-200 max-w-3xl mx-auto">
-                         <div 
-                            className="bg-stone-800 hover:bg-stone-900 cursor-pointer text-white rounded-xl p-4 flex items-center justify-between shadow-md transition-colors"
-                            onClick={() => setShowYasin(!showYasin)}
-                         >
-                            <h3 className="text-xl font-bold flex items-center gap-3">
-                               <BookOpen className="text-stone-300" size={24} /> Bacaan Surat Yasin
-                            </h3>
+                         <div className="bg-stone-800 hover:bg-stone-900 cursor-pointer text-white rounded-xl p-4 flex items-center justify-between shadow-md transition-colors" onClick={() => setShowYasin(!showYasin)}>
+                            <h3 className="text-xl font-bold flex items-center gap-3"><BookOpen className="text-stone-300" size={24} /> Bacaan Surat Yasin Lengkap</h3>
                             {showYasin ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                          </div>
-                         
                          {showYasin && (
                             <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                                <div className="bg-emerald-50 rounded-xl p-6 text-center border border-emerald-100">
                                    <p className="text-2xl md:text-4xl font-serif text-emerald-900 mb-2">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
                                    <p className="text-stone-600 italic">Bismillaahir-rahmaanir-rahiim.</p>
-                                   <p className="text-sm text-emerald-800 mt-2 font-medium">"Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang."</p>
                                </div>
-                               
                                {suratYasinData.map((ayat) => (
                                    <div key={ayat.no} className="bg-white rounded-xl p-5 border border-stone-200 shadow-sm">
                                        <div className="flex justify-between items-start gap-4 mb-4 border-b border-stone-100 pb-4">
-                                           <div className="shrink-0 w-8 h-8 bg-stone-100 text-stone-500 rounded-full flex items-center justify-center font-bold text-sm mt-2">
-                                               {ayat.no}
-                                           </div>
-                                           <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 flex-1" dir="rtl">
-                                               {ayat.arab}
-                                           </p>
+                                           <div className="shrink-0 w-8 h-8 bg-stone-100 text-stone-500 rounded-full flex items-center justify-center font-bold text-sm mt-2">{ayat.no}</div>
+                                           <p className="text-right text-2xl md:text-3xl leading-loose font-serif text-stone-800 flex-1" dir="rtl">{ayat.arab}</p>
                                        </div>
                                        <div className="space-y-2">
                                            <p className="text-emerald-800 font-medium italic">{ayat.latin}</p>
@@ -519,78 +485,52 @@
                             </div>
                          )}
                       </div>
-
                     </div>
                   </div>
                 )}
 
-                {/* --- VIEW PUBLIC PENCARIAN --- */}
+                {}
                 {view === 'public' && !selectedMakam && (
                   <div className="space-y-6 animate-in fade-in duration-500">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400" size={20} />
-                        <input
-                          type="text"
-                          placeholder="Masukkan nama almarhum/almarhumah... (Coba ketik 'Ahmad')"
-                          value={searchTerm}
-                          onChange={handleSearch}
-                          className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                        />
+                        <input type="text" placeholder="Masukkan nama almarhum/almarhumah... (Coba ketik 'Ahmad')" value={searchTerm} onChange={handleSearch} className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" />
                       </div>
                     </div>
-
                     <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
                       <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
                         <h2 className="font-semibold text-stone-700">Hasil Pencarian ({filteredData.length})</h2>
-                        {!isFirebaseConfigured && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Offline Mode</span>}
                       </div>
                       <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
                         {filteredData.length > 0 ? (
                           filteredData.map((makam) => (
-                            <div 
-                              key={makam.id} 
-                              onClick={() => setSelectedMakam(makam)}
-                              className="p-4 hover:bg-emerald-50 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                            >
+                            <div key={makam.id} onClick={() => setSelectedMakam(makam)} className="p-4 hover:bg-emerald-50 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div>
                                 <h3 className="font-bold text-lg text-emerald-900">{makam.nama}</h3>
-                                <div className="flex items-center gap-4 text-sm text-stone-500 mt-1">
-                                  <span className="flex items-center gap-1"><Calendar size={14}/> Wafat: {makam.tglWafat}</span>
-                                </div>
+                                <div className="flex items-center gap-4 text-sm text-stone-500 mt-1"><span className="flex items-center gap-1"><Calendar size={14}/> Wafat: {makam.tglWafat}</span></div>
                               </div>
                               <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0">
-                                <MapPin size={16} />
-                                {makam.namaMakam} / Baris {makam.baris} / No. {makam.nisan}
+                                <MapPin size={16} /> {makam.namaMakam} / B{makam.baris} / N{makam.nisan}
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="p-8 text-center text-stone-500">
-                            Tidak ditemukan makam dengan nama tersebut.
-                          </div>
+                          <div className="p-8 text-center text-stone-500">Tidak ditemukan makam dengan nama tersebut.</div>
                         )}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* --- VIEW PUBLIC PETA DENAH --- */}
+                {}
                 {view === 'public' && selectedMakam && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <button 
-                      onClick={() => setSelectedMakam(null)}
-                      className="flex items-center gap-2 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 px-4 py-2 rounded-lg w-fit transition-colors"
-                    >
-                      <ArrowLeft size={18} /> Kembali ke Pencarian
-                    </button>
-
+                    <button onClick={() => setSelectedMakam(null)} className="flex items-center gap-2 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 px-4 py-2 rounded-lg w-fit transition-colors"><ArrowLeft size={18} /> Kembali ke Pencarian</button>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
                       <div className="flex-1">
                         <h2 className="text-2xl font-bold text-emerald-900 mb-2">{selectedMakam.nama}</h2>
-                        <div className="flex flex-col gap-2 text-stone-600 mb-4">
-                          <span className="flex items-center gap-2"><Calendar size={18}/> Tanggal Wafat: {selectedMakam.tglWafat}</span>
-                        </div>
+                        <div className="flex flex-col gap-2 text-stone-600 mb-4"><span className="flex items-center gap-2"><Calendar size={18}/> Tanggal Wafat: {selectedMakam.tglWafat}</span></div>
                         {selectedMakam.sejarah && (
                            <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100 text-sm text-stone-700">
                               <span className="font-bold text-emerald-800 flex items-center gap-2 mb-1"><BookOpen size={14}/> Kenangan / Sejarah Singkat:</span>
@@ -600,43 +540,23 @@
                       </div>
                       <div className="text-right bg-stone-50 p-4 rounded-lg border border-stone-200 w-full md:w-auto shrink-0">
                         <div className="text-sm text-stone-500 mb-1">Lokasi Detail</div>
-                        <div className="text-xl font-bold text-emerald-800">
-                          {selectedMakam.namaMakam}
-                        </div>
-                        <div className="font-semibold text-stone-700">
-                          Baris {selectedMakam.baris}, Nisan No. {selectedMakam.nisan}
-                        </div>
+                        <div className="text-xl font-bold text-emerald-800">{selectedMakam.namaMakam}</div>
+                        <div className="font-semibold text-stone-700">Baris {selectedMakam.baris}, Nisan No. {selectedMakam.nisan}</div>
                       </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
                       <div className="p-4 bg-emerald-800 text-white border-b border-emerald-900 flex justify-between items-center">
-                        <h3 className="font-bold flex items-center gap-2">
-                          <MapIcon size={18} /> Denah Area: {selectedMakam.namaMakam}
-                        </h3>
-                        <span className="text-xs bg-emerald-700 px-2 py-1 rounded">Visualisasi Skematik</span>
+                        <h3 className="font-bold flex items-center gap-2"><MapIcon size={18} /> Denah Area: {selectedMakam.namaMakam}</h3>
                       </div>
-                      
                       <div className="p-4 md:p-8 bg-[#e8f3e8] overflow-x-auto relative max-h-[70vh] overflow-y-auto">
                         <div className="sticky left-2 top-2 z-30 pointer-events-none mb-[-80px] w-fit">
                            <div className="bg-white/95 backdrop-blur-sm w-20 h-20 rounded-full shadow-md border-2 border-emerald-200 pointer-events-auto flex items-center justify-center relative transform hover:scale-105 transition-transform">
-                              <div className="absolute top-1.5 flex flex-col items-center">
-                                 <span className="text-red-600 font-black text-sm drop-shadow-sm leading-none z-10">U</span>
-                                 <svg width="14" height="24" viewBox="0 0 14 24" className="mt-0.5">
-                                    <polygon points="7,0 14,24 7,18 0,24" fill="#dc2626" />
-                                 </svg>
-                              </div>
-                              <div className="absolute bottom-1.5 flex flex-col items-center rotate-180">
-                                 <svg width="10" height="18" viewBox="0 0 14 24" className="mb-0.5 opacity-40">
-                                    <polygon points="7,0 14,24 7,18 0,24" fill="#44403c" />
-                                 </svg>
-                              </div>
-                              <div className="absolute w-full h-[1px] bg-emerald-100"></div>
-                              <div className="absolute w-[1px] h-full bg-emerald-100"></div>
+                              <div className="absolute top-1.5 flex flex-col items-center"><span className="text-red-600 font-black text-sm drop-shadow-sm leading-none z-10">U</span><svg width="14" height="24" viewBox="0 0 14 24" className="mt-0.5"><polygon points="7,0 14,24 7,18 0,24" fill="#dc2626" /></svg></div>
+                              <div className="absolute bottom-1.5 flex flex-col items-center rotate-180"><svg width="10" height="18" viewBox="0 0 14 24" className="mb-0.5 opacity-40"><polygon points="7,0 14,24 7,18 0,24" fill="#44403c" /></svg></div>
+                              <div className="absolute w-full h-[1px] bg-emerald-100"></div><div className="absolute w-[1px] h-full bg-emerald-100"></div>
                               <div className="w-3 h-3 bg-emerald-800 rounded-full border-2 border-white z-10 shadow-sm relative"></div>
-                              <span className="absolute bottom-2 text-[10px] font-bold text-stone-400 z-10">S</span>
-                              <span className="absolute right-2 text-[10px] font-bold text-stone-400 z-10">T</span>
-                              <span className="absolute left-2 text-[10px] font-bold text-stone-400 z-10">B</span>
+                              <span className="absolute bottom-2 text-[10px] font-bold text-stone-400 z-10">S</span><span className="absolute right-2 text-[10px] font-bold text-stone-400 z-10">T</span><span className="absolute left-2 text-[10px] font-bold text-stone-400 z-10">B</span>
                            </div>
                         </div>
 
@@ -648,42 +568,22 @@
 
                             return Array.from({ length: dinamisMaxBaris }, (_, i) => i + 1).map((baris) => (
                               <div key={baris} className="flex items-center gap-4 w-full">
-                                <div className="w-20 text-right font-bold text-emerald-800 shrink-0">
-                                  Baris {baris}
-                                </div>
+                                <div className="w-20 text-right font-bold text-emerald-800 shrink-0">Baris {baris}</div>
                                 <div className="flex gap-2 flex-1 border-b-4 border-[#c1dec1] pb-2 pr-4">
                                   {Array.from({ length: dinamisMaxNisan }, (_, i) => i + 1).map((nisan) => {
                                     const isSelected = selectedMakam.baris === baris && selectedMakam.nisan === nisan;
                                     return (
-                                      <div 
-                                        key={nisan} 
-                                        className={`
-                                          relative w-12 h-16 rounded-t-lg flex items-end justify-center pb-2 text-xs font-bold border-2 transition-all
-                                          ${isSelected 
-                                            ? 'bg-slate-800 border-slate-900 text-white shadow-lg z-10 scale-110' 
-                                            : 'bg-emerald-100 border-emerald-300 text-emerald-600 opacity-60'}
-                                        `}
-                                      >
+                                      <div key={nisan} className={`relative w-12 h-16 rounded-t-lg flex items-end justify-center pb-2 text-xs font-bold border-2 transition-all ${isSelected ? 'bg-slate-800 border-slate-900 text-white shadow-lg z-10 scale-110' : 'bg-emerald-100 border-emerald-300 text-emerald-600 opacity-60'}`}>
                                         {nisan}
                                         {isSelected && (
                                           <div className="absolute bottom-full mb-4 left-1/2 transform -translate-x-1/2 w-64 bg-yellow-400 border-4 border-yellow-500 rounded-xl shadow-xl p-4 text-center cursor-default z-50 animate-bounce">
-                                            <div className="text-xs font-bold uppercase text-yellow-900 mb-1 tracking-wider">
-                                              Makam Saudara
-                                            </div>
-                                            <div className="text-lg font-extrabold text-black leading-tight mb-2">
-                                              {selectedMakam.nama}
-                                            </div>
-                                            <div className="bg-yellow-300/50 rounded py-1 mb-2 text-sm text-yellow-900 border border-yellow-500/30">
-                                              Wafat: {selectedMakam.tglWafat}
-                                            </div>
+                                            <div className="text-xs font-bold uppercase text-yellow-900 mb-1 tracking-wider">Makam Saudara</div>
+                                            <div className="text-lg font-extrabold text-black leading-tight mb-2">{selectedMakam.nama}</div>
+                                            <div className="bg-yellow-300/50 rounded py-1 mb-2 text-sm text-yellow-900 border border-yellow-500/30">Wafat: {selectedMakam.tglWafat}</div>
                                             <div className="text-black font-bold flex flex-col items-center gap-1">
-                                              <span className="text-sm">Lokasi:</span>
-                                              <span className="bg-black text-yellow-400 px-3 py-1 rounded-xl text-sm leading-tight text-center">
-                                                {selectedMakam.namaMakam}<br/>Baris {selectedMakam.baris}, No. {selectedMakam.nisan}
-                                              </span>
+                                              <span className="text-sm">Lokasi:</span><span className="bg-black text-yellow-400 px-3 py-1 rounded-xl text-sm leading-tight text-center">{selectedMakam.namaMakam}<br/>Baris {selectedMakam.baris}, No. {selectedMakam.nisan}</span>
                                             </div>
                                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[16px] border-t-yellow-500"></div>
-                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 mt-[-4px] border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-yellow-400"></div>
                                           </div>
                                         )}
                                       </div>
@@ -699,132 +599,73 @@
                   </div>
                 )}
 
-                {/* --- VIEW LOGIN --- */}
+                {}
                 {view === 'login' && (
                   <div className="max-w-md mx-auto mt-10">
                     <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-200 animate-in zoom-in-95 duration-300">
                       <div className="text-center mb-8">
-                        <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <ShieldAlert size={32} className="text-emerald-700" />
-                        </div>
+                        <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><ShieldAlert size={32} className="text-emerald-700" /></div>
                         <h2 className="text-2xl font-bold text-stone-800">Login Admin</h2>
-                        <p className="text-stone-500 text-sm mt-2">Gunakan kredensial petugas untuk mengelola data</p>
                       </div>
-
-                      {loginError && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200 text-center font-medium whitespace-pre-line">
-                          {loginError}
-                        </div>
-                      )}
-
+                      {loginError && (<div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-200 text-center font-medium whitespace-pre-line">{loginError}</div>)}
                       <form onSubmit={handleLogin} className="space-y-5">
                         <div>
                           <label className="block text-sm font-medium text-stone-700 mb-1">Username</label>
-                          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none" placeholder="Masukkan username" required />
+                          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" required />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-stone-700 mb-1">Password</label>
                           <div className="relative">
-                            <input 
-                              type={showPassword ? "text" : "password"} 
-                              value={password} 
-                              onChange={(e) => setPassword(e.target.value)} 
-                              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none pr-10" 
-                              placeholder="Masukkan password" 
-                              required 
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400 hover:text-emerald-600 focus:outline-none transition-colors"
-                            >
-                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
+                            <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none pr-10" required />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400 hover:text-emerald-600 focus:outline-none">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                           </div>
                         </div>
-                        <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition-colors mt-4">
-                          Masuk Sistem
-                        </button>
+                        <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg mt-4">Masuk Sistem</button>
                       </form>
                     </div>
                   </div>
                 )}
 
-                {/* --- VIEW ADMIN DASHBOARD --- */}
+                {}
                 {view === 'admin' && (
                   <div className="space-y-6 animate-in fade-in duration-500">
-                    {successMsg && (
-                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
-                        <CheckCircle2 className="text-emerald-500 shrink-0" />
-                        <span className="font-medium">{successMsg}</span>
-                      </div>
-                    )}
-
+                    {successMsg && (<div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm"><CheckCircle2 className="text-emerald-500 shrink-0" /><span className="font-medium">{successMsg}</span></div>)}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      
                       <div className="lg:col-span-1 space-y-6">
                         <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-                          <div className="p-4 bg-stone-800 text-white flex items-center gap-2">
-                            <MapPin size={20} />
-                            <h2 className="font-semibold">Manajemen Area Makam</h2>
-                          </div>
+                          <div className="p-4 bg-stone-800 text-white flex items-center gap-2"><MapPin size={20} /><h2 className="font-semibold">Manajemen Area Makam</h2></div>
                           <div className="p-4">
                             <form onSubmit={handleAddMakamList} className="flex gap-2 mb-4">
-                              <input 
-                                type="text" value={newMakamName} onChange={e => setNewMakamName(e.target.value)} 
-                                placeholder="Tambah Makam Baru..." 
-                                className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" 
-                              />
-                              <button type="submit" className="bg-stone-800 hover:bg-black text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                                Tambah
-                              </button>
+                              <input type="text" value={newMakamName} onChange={e => setNewMakamName(e.target.value)} placeholder="Tambah Makam Baru..." className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                              <button type="submit" className="bg-stone-800 hover:bg-black text-white px-3 py-2 rounded-lg text-sm font-medium">Tambah</button>
                             </form>
-
                             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                              {daftarMakam.length === 0 && <p className="text-sm text-stone-500 text-center py-4">Belum ada area makam.</p>}
                               {daftarMakam.map((makam, index) => (
                                 <div key={index} className="bg-stone-50 border border-stone-200 p-3 rounded-lg flex flex-col gap-2">
                                   {editMakamIndex === index ? (
                                     <div className="flex items-center gap-2">
-                                      <input 
-                                        type="text" value={editMakamValue} onChange={e => setEditMakamValue(e.target.value)} 
-                                        className="flex-1 px-2 py-1.5 border border-emerald-500 rounded text-sm outline-none" autoFocus
-                                      />
-                                      <button onClick={() => handleUpdateMakamList(index)} className="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200" title="Simpan">
-                                        <Save size={16} />
-                                      </button>
-                                      <button onClick={() => setEditMakamIndex(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded hover:bg-stone-300" title="Batal">
-                                        <X size={16} />
-                                      </button>
+                                      <input type="text" value={editMakamValue} onChange={e => setEditMakamValue(e.target.value)} className="flex-1 px-2 py-1.5 border border-emerald-500 rounded text-sm outline-none" autoFocus />
+                                      <button onClick={() => handleUpdateMakamList(index)} className="p-1.5 bg-emerald-100 text-emerald-700 rounded"><Save size={16} /></button>
+                                      <button onClick={() => setEditMakamIndex(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded"><X size={16} /></button>
                                     </div>
                                   ) : (
                                     <div className="flex items-center justify-between">
                                       <div className="flex flex-col">
                                         <span className="font-medium text-stone-700 text-sm">{makam}</span>
-                                        <span className="text-[10px] mt-0.5 font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full w-fit">
-                                          {dataMakam.filter(item => item.namaMakam === makam).length} dimakamkan
-                                        </span>
+                                        <span className="text-[10px] mt-0.5 font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full w-fit">{dataMakam.filter(item => item.namaMakam === makam).length} dimakamkan</span>
                                       </div>
                                       <div className="flex gap-1">
                                         {deleteConfirmIndex === index ? (
                                           <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-2 py-1 rounded">
                                             <span className="text-xs text-red-800 font-bold">Hapus?</span>
-                                            <button onClick={() => executeDeleteMakamList(index)} className="p-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-bold px-3 transition-colors">Ya</button>
-                                            <button onClick={cancelDeleteMakam} className="p-1 bg-stone-200 text-stone-700 rounded hover:bg-stone-300 text-xs font-bold px-2 transition-colors">Batal</button>
+                                            <button onClick={() => executeDeleteMakamList(index)} className="p-1 bg-red-600 text-white rounded text-xs font-bold px-3">Ya</button>
+                                            <button onClick={cancelDeleteMakam} className="p-1 bg-stone-200 text-stone-700 rounded text-xs font-bold px-2">Batal</button>
                                           </div>
                                         ) : (
                                           <React.Fragment>
-                                            <button 
-                                              onClick={() => { setEditMakamIndex(index); setEditMakamValue(makam); }} 
-                                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit"
-                                            >
-                                              <Edit2 size={16} />
-                                            </button>
-                                            <button 
-                                              onClick={() => confirmDeleteMakam(index)} 
-                                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus"
-                                            >
-                                              <Trash2 size={16} />
-                                            </button>
+                                            <button onClick={() => { setEditMakamIndex(index); setEditMakamValue(makam); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={16} /></button>
+                                            <button onClick={() => confirmDeleteMakam(index)} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
                                           </React.Fragment>
                                         )}
                                       </div>
@@ -839,130 +680,58 @@
 
                       <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-                          <div className="p-4 bg-emerald-800 border-b border-emerald-900 text-white flex items-center gap-2">
-                            <Plus size={20} />
-                            <h2 className="font-semibold text-lg">Tambah Data Almarhum/ah</h2>
-                          </div>
-                          
+                          <div className="p-4 bg-emerald-800 border-b border-emerald-900 text-white flex items-center gap-2"><Plus size={20} /><h2 className="font-semibold text-lg">Tambah Data Almarhum/ah</h2></div>
                           <form onSubmit={handleAddData} className="p-4 md:p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                              <div className="space-y-1">
-                                <label className="block text-sm font-medium text-stone-700">Nama Lengkap *</label>
-                                <input type="text" name="nama" value={formData.nama} onChange={handleFormChange} required placeholder="Contoh: Alm. Budi Suryadi" className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="block text-sm font-medium text-stone-700">Tanggal Wafat *</label>
-                                <input type="text" name="tglWafat" value={formData.tglWafat} onChange={handleFormChange} required placeholder="Contoh: 15 Okt 2023" className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <label className="block text-sm font-medium text-stone-700">Pilih Area Makam *</label>
-                                <select name="namaMakam" value={formData.namaMakam} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                                  {daftarMakam.length === 0 ? (
-                                    <option value="">-- Tambah Area Makam Dulu --</option>
-                                  ) : (
-                                    daftarMakam.map((makam, i) => {
-                                      const jumlah = dataMakam.filter(item => item.namaMakam === makam).length;
-                                      return (
-                                        <option key={i} value={makam}>{makam} ({jumlah} data)</option>
-                                      );
-                                    })
-                                  )}
+                              <div className="space-y-1"><label className="block text-sm font-medium text-stone-700">Nama Lengkap *</label><input type="text" name="nama" value={formData.nama} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none" /></div>
+                              <div className="space-y-1"><label className="block text-sm font-medium text-stone-700">Tanggal Wafat *</label><input type="text" name="tglWafat" value={formData.tglWafat} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none" /></div>
+                              <div className="space-y-1"><label className="block text-sm font-medium text-stone-700">Pilih Area Makam *</label>
+                                <select name="namaMakam" value={formData.namaMakam} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none bg-white">
+                                  {daftarMakam.map((makam, i) => <option key={i} value={makam}>{makam}</option>)}
                                 </select>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                  <label className="block text-sm font-medium text-stone-700">No Nisan *</label>
-                                  <input type="number" min="1" name="nisan" value={formData.nisan} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-                                </div>
+                                <div className="space-y-1"><label className="block text-sm font-medium text-stone-700">Baris *</label><input type="number" min="1" name="baris" value={formData.baris} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none" /></div>
+                                <div className="space-y-1"><label className="block text-sm font-medium text-stone-700">No Nisan *</label><input type="number" min="1" name="nisan" value={formData.nisan} onChange={handleFormChange} required className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none" /></div>
                               </div>
                             </div>
-                            
                             <div className="mt-6 space-y-1">
                                 <label className="block text-sm font-medium text-stone-700">Sejarah Singkat / Keterangan (Opsional)</label>
-                                <textarea name="sejarah" value={formData.sejarah || ''} onChange={handleFormChange} placeholder="Tuliskan biografi singkat, kenangan, atau keterangan lain tentang almarhum..." className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-y min-h-[80px] text-sm"></textarea>
+                                <textarea name="sejarah" value={formData.sejarah || ''} onChange={handleFormChange} className="w-full px-3 py-2 border border-stone-300 rounded-lg outline-none resize-y min-h-[80px] text-sm"></textarea>
                             </div>
-
-                            <div className="mt-6 flex justify-end">
-                              <button type="submit" disabled={daftarMakam.length === 0} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-400 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-                                <Plus size={18} /> Simpan Data Almarhum
-                              </button>
-                            </div>
+                            <div className="mt-6 flex justify-end"><button type="submit" disabled={daftarMakam.length === 0} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg flex items-center gap-2"><Plus size={18} /> Simpan Data</button></div>
                           </form>
                         </div>
 
                         <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-                          <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
-                            <h2 className="font-semibold text-stone-800">Database Penghuni Makam ({dataMakam.length} Data)</h2>
-                          </div>
+                          <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center"><h2 className="font-semibold text-stone-800">Database Penghuni Makam ({dataMakam.length} Data)</h2></div>
                           <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                             <table className="w-full text-left border-collapse">
-                              <thead className="sticky top-0 bg-stone-100 shadow-sm z-10">
-                                <tr className="text-stone-600 text-sm border-b border-stone-200">
-                                  <th className="p-3 font-semibold w-12">No</th>
-                                  <th className="p-3 font-semibold">Nama Almarhum/ah</th>
-                                  <th className="p-3 font-semibold">Tanggal Wafat</th>
-                                  <th className="p-3 font-semibold">Lokasi (Area/Baris/Nisan)</th>
-                                  <th className="p-3 font-semibold text-center w-28">Aksi</th>
-                                </tr>
-                              </thead>
+                              <thead className="sticky top-0 bg-stone-100 shadow-sm z-10"><tr className="text-stone-600 text-sm border-b border-stone-200"><th className="p-3 font-semibold">No</th><th className="p-3 font-semibold">Nama Almarhum/ah</th><th className="p-3 font-semibold">Lokasi</th><th className="p-3 font-semibold text-center w-28">Aksi</th></tr></thead>
                               <tbody className="divide-y divide-stone-100 text-sm">
                                 {dataMakam.map((makam, index) => (
                                   editDataId === makam.id ? (
                                     <tr key={makam.id} className="bg-emerald-50/70">
-                                      <td className="p-3 text-stone-500 text-center">{index + 1}</td>
+                                      <td className="p-3 text-center">{index + 1}</td>
+                                      <td className="p-3"><input type="text" name="nama" value={editDataForm.nama} onChange={handleEditDataChange} className="w-full px-2 py-1 border border-emerald-400 rounded text-sm outline-none bg-white mb-1" placeholder="Nama"/><input type="text" name="tglWafat" value={editDataForm.tglWafat} onChange={handleEditDataChange} className="w-full px-2 py-1 border border-emerald-400 rounded text-sm outline-none bg-white mb-1" placeholder="Tgl Wafat"/><textarea name="sejarah" value={editDataForm.sejarah || ''} onChange={handleEditDataChange} className="w-full px-2 py-1 border border-emerald-400 rounded text-xs outline-none bg-white" placeholder="Sejarah..."></textarea></td>
                                       <td className="p-3">
-                                        <input type="text" name="nama" value={editDataForm.nama} onChange={handleEditDataChange} className="w-full px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Nama" />
-                                      </td>
-                                      <td className="p-3">
-                                        <input type="text" name="tglWafat" value={editDataForm.tglWafat} onChange={handleEditDataChange} className="w-full px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="Tgl Wafat" />
-                                      </td>
-                                      <td className="p-3">
-                                        <div className="flex flex-col xl:flex-row gap-1">
-                                          <select name="namaMakam" value={editDataForm.namaMakam} onChange={handleEditDataChange} className="px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white min-w-[100px]">
-                                            {daftarMakam.map((m, i) => {
-                                              const jumlah = dataMakam.filter(item => item.namaMakam === m).length;
-                                              return <option key={i} value={m}>{m} ({jumlah} data)</option>;
-                                            })}
-                                          </select>
-                                          <div className="flex gap-1">
-                                            <input type="number" name="baris" min="1" value={editDataForm.baris} onChange={handleEditDataChange} className="w-14 px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" title="Baris" placeholder="Brs"/>
-                                            <input type="number" name="nisan" min="1" value={editDataForm.nisan} onChange={handleEditDataChange} className="w-14 px-2 py-1.5 border border-emerald-400 rounded text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" title="No Nisan" placeholder="Nis"/>
-                                          </div>
-                                        </div>
-                                        <div className="mt-2">
-                                          <textarea name="sejarah" value={editDataForm.sejarah || ''} onChange={handleEditDataChange} placeholder="Sejarah singkat..." className="w-full px-2 py-1.5 border border-emerald-400 rounded text-xs outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-y min-h-[40px]"></textarea>
-                                        </div>
+                                        <select name="namaMakam" value={editDataForm.namaMakam} onChange={handleEditDataChange} className="w-full px-2 py-1 border border-emerald-400 rounded text-sm outline-none bg-white mb-1">{daftarMakam.map((m, i) => <option key={i} value={m}>{m}</option>)}</select>
+                                        <div className="flex gap-1"><input type="number" name="baris" min="1" value={editDataForm.baris} onChange={handleEditDataChange} className="w-14 px-2 py-1 border border-emerald-400 rounded text-sm outline-none bg-white" placeholder="Brs"/><input type="number" name="nisan" min="1" value={editDataForm.nisan} onChange={handleEditDataChange} className="w-14 px-2 py-1 border border-emerald-400 rounded text-sm outline-none bg-white" placeholder="Nis"/></div>
                                       </td>
                                       <td className="p-3 text-center">
-                                        <div className="flex justify-center gap-1">
-                                          <button onClick={saveEditData} className="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors shadow-sm" title="Simpan Perubahan"><Save size={16} /></button>
-                                          <button onClick={() => setEditDataId(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded hover:bg-stone-300 transition-colors shadow-sm" title="Batal Edit"><X size={16} /></button>
-                                        </div>
+                                        <div className="flex justify-center gap-1"><button onClick={saveEditData} className="p-1.5 bg-emerald-100 text-emerald-700 rounded"><Save size={16} /></button><button onClick={() => setEditDataId(null)} className="p-1.5 bg-stone-200 text-stone-600 rounded"><X size={16} /></button></div>
                                       </td>
                                     </tr>
                                   ) : (
                                     <tr key={makam.id} className="hover:bg-stone-50 transition-colors">
                                       <td className="p-3 text-stone-500 text-center">{index + 1}</td>
-                                      <td className="p-3 font-medium text-stone-800">{makam.nama}</td>
-                                      <td className="p-3 text-stone-600">{makam.tglWafat}</td>
-                                      <td className="p-3">
-                                        <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md font-medium text-xs">
-                                          <MapPin size={12}/> {makam.namaMakam} - B{makam.baris} - N{makam.nisan}
-                                        </span>
-                                      </td>
+                                      <td className="p-3 font-medium text-stone-800">{makam.nama}<div className="text-stone-500 font-normal mt-0.5">{makam.tglWafat}</div></td>
+                                      <td className="p-3"><span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs font-bold whitespace-nowrap"><MapPin size={10}/> {makam.namaMakam}-B{makam.baris}-N{makam.nisan}</span></td>
                                       <td className="p-3 text-center">
                                         {deleteDataConfirmId === makam.id ? (
-                                          <div className="flex items-center justify-center gap-1 bg-red-50 border border-red-200 p-1 rounded">
-                                            <span className="text-[10px] text-red-800 font-bold hidden sm:inline">Hapus?</span>
-                                            <button onClick={() => executeDeleteData(makam.id)} className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-bold transition-colors shadow-sm">Ya</button>
-                                            <button onClick={() => setDeleteDataConfirmId(null)} className="px-2 py-1 bg-stone-200 text-stone-700 rounded hover:bg-stone-300 text-xs font-bold transition-colors shadow-sm">X</button>
-                                          </div>
+                                          <div className="flex flex-col gap-1 items-center bg-red-50 p-1 rounded"><span className="text-[10px] text-red-800 font-bold">Hapus?</span><div className="flex gap-1"><button onClick={() => executeDeleteData(makam.id)} className="px-2 py-0.5 bg-red-600 text-white rounded text-xs">Ya</button><button onClick={() => setDeleteDataConfirmId(null)} className="px-2 py-0.5 bg-stone-200 text-stone-700 rounded text-xs">X</button></div></div>
                                         ) : (
-                                          <div className="flex justify-center gap-1">
-                                            <button onClick={() => startEditData(makam)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit Data Almarhum"><Edit2 size={16} /></button>
-                                            <button onClick={() => setDeleteDataConfirmId(makam.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus Data Almarhum"><Trash2 size={16} /></button>
-                                          </div>
+                                          <div className="flex justify-center gap-1"><button onClick={() => startEditData(makam)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={16} /></button><button onClick={() => setDeleteDataConfirmId(makam.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button></div>
                                         )}
                                       </td>
                                     </tr>
@@ -972,7 +741,6 @@
                             </table>
                           </div>
                         </div>
-
                       </div>
                     </div>
                   </div>
